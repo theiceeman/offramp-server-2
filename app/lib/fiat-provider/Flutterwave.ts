@@ -1,6 +1,7 @@
 
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import TransactionsController from 'App/controllers/http/TransactionsController';
+import WebSocketsController from 'App/controllers/http/WebSocketsController';
 import { transactionStatus, transactionType } from 'App/helpers/types';
 import Transaction from 'App/models/Transaction';
 import FlutterwaveRaveV3 from 'flutterwave-node-v3';
@@ -48,11 +49,11 @@ export default class Flutterwave {
   public async processWebhook({ request, response }: HttpContextContract) {
     try {
       const payload = request.body();
-      console.log(payload);
 
       const secretHash = process.env.FLW_SECRET_HASH;
-      const signature = request.headers["verif-hash"];
+      const signature = request.headers()["verif-hash"];
 
+      console.log({ signature, secretHash })
       // Verify req is from flutterwave
       if (!signature || (signature !== secretHash))
         throw new Error('signature error')
@@ -63,37 +64,39 @@ export default class Flutterwave {
         throw new Error('status not successfull')
 
       // check if txn is already processed
-      let txn = await Transaction.query().where('unique_id', payload?.data?.tx_ref)
+      let txn = await Transaction.query().where('fiat_provider_tx_ref', payload?.data?.tx_ref)
       if (txn[0].status === transactionStatus.COMPLETED)
         throw new Error('txn already completed')
 
       // call flutterwave to verify
-      const response = await new this.sdk.Transaction.verify({ id: payload.id });
+      const flutterwaveResponse = await new this.sdk.Transaction.verify({ id: payload?.data?.id });
       let txnType: "userBuy" | "userSell" = txn[0].type === transactionType.BUY_CRYPTO ? "userBuy" : "userSell";
       let actualAmountUserSends = new TransactionsController()._calcActualAmountUserSends(txn, txnType);
 
-      let data = {
-        transaction_hash: payload?.data?.tx_ref,
-        status: ''
-      }
+      let data = { status: '' }
 
       if (
-        response.data.status === "successful"
-        && response.data.amount >= actualAmountUserSends
-        && response.data.currency === 'NGN') {
+        flutterwaveResponse.data.status === "successful"
+        && flutterwaveResponse.data.amount >= actualAmountUserSends
+        && flutterwaveResponse.data.currency === 'NGN') {
         data.status = transactionStatus.TRANSFER_CONFIRMED;
       } else {
         data.status = transactionStatus.FAILED;
       }
 
       await Transaction.query()
-        .where("unique_id", payload?.data?.tx_ref)
+        .where("fiat_provider_tx_ref", payload?.data?.tx_ref)
         .update(data);
 
-      response.status(200)
+      await new WebSocketsController()
+        .emitStatusUpdateToClient(txn[0].uniqueId)
+
+      // response.status(200)
+      response.status(200).send('webhook processed.');
     } catch (error) {
       console.log(error)
-      response.status(401);
+      // response.status(401);
+      response.status(401).send('processing webhook failed!');
     }
   }
 

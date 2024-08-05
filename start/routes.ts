@@ -1,10 +1,9 @@
 import Route from '@ioc:Adonis/Core/Route'
-// import WebSocketsController from 'App/controllers/http/WebSocketsController'
-
-// Route.get('/', async () => {
-//   await new WebSocketsController()
-//     .emitStatusUpdateToClient('07dc5962-dbcc-4871-8494-bc384749924a')
-// })
+import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+import { isTestNetwork } from 'App/helpers/utils';
+import Flutterwave from 'App/lib/fiat-provider/Flutterwave';
+import Currency from 'App/models/Currency';
+import Transaction from 'App/models/Transaction';
 
 
 Route.get('/app/global-configuration', 'AppConfigurationsController.admin').middleware('auth:admin')
@@ -120,3 +119,23 @@ Route.group(() => {
   Route.get('/single/:ticketId', 'TicketsController.viewConversation')
   Route.patch('/close/:ticketId', 'TicketsController.closeTicket')
 }).prefix('/admin/ticket').middleware('auth:admin')
+
+
+// import Route from '@ioc:Adonis/Core/Route'
+// Importing the ExampleService
+
+Route.post('transaction/flutterwave/process-web-hook', async (context: HttpContextContract) => {
+  try {
+    const payload = context.request.body();
+    let txn = await Transaction.query().where('fiat_provider_tx_ref', payload?.data?.tx_ref)
+    const recievingCurrency = await Currency.query().where('unique_id', txn[0].recieverCurrencyId)
+
+    let isTestTransaction = isTestNetwork(recievingCurrency[0].network)
+    const message = new Flutterwave(isTestTransaction ? 'dev' : 'prod')
+      .processWebhook(context);
+
+    context.response.send(message);
+  } catch (error) {
+    console.error({ error })
+  }
+});
