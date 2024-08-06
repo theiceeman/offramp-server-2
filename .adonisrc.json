@@ -33,6 +33,10 @@
   },
   "testProviders": ["@japa/preset-adonis/TestsProvider"],
   "namespaces": {
-    "httpControllers": "App/controllers/http"
+    "httpControllers": "App/controllers/http",
+    "models": "App/models",
+    "middleware": "App/middleware",
+    "exceptions": "App/exceptions",
+    "validators": "App/validators"
   }
 }
