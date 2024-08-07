@@ -6,6 +6,7 @@ import { supportedChains, transactionStatus, transactionType } from 'App/helpers
 import Transaction from 'App/models/Transaction';
 import FlutterwaveRaveV3 from 'flutterwave-node-v3';
 import SystemWallet from '../system-wallet/SystemWallet';
+import BuyCryptoIndexer from '../indexer/BuyCryptoIndexer';
 
 const FLW_TESTNET_PUBLIC_KEY = process.env.FLW_TESTNET_PUBLIC_KEY;
 const FLW_TESTNET_SECRET_KEY = process.env.FLW_TESTNET_SECRET_KEY;
@@ -91,17 +92,18 @@ export default class Flutterwave {
       let actualAmountUserReceives = new TransactionsController()
         ._calcActualAmountUserRecieves(txn, txnType);
 
+      // track transaction status to know when its settled
+      new BuyCryptoIndexer(txn[0].uniqueId).__initializer()
+
       new SystemWallet(recievingCurrencyNetwork)
         .transferToken(actualAmountUserReceives, txn[0].recieverCurrency.tokenAddress, txn[0].recievingWalletAddress)
 
       await new WebSocketsController()
         .emitStatusUpdateToClient(txn[0].uniqueId)
 
-      // response.status(200)
       response.status(200).send('webhook processed.');
     } catch (error) {
       console.log(error)
-      // response.status(401);
       response.status(401).send('processing webhook failed!');
     }
   }

@@ -37,14 +37,14 @@ export default class IndexerProvider {
 
   public async ready() {
     const Transaction = (await require('App/models/Transaction')).default;
-    const TransactionIndexer = (await require('App/lib/indexer/Indexer')).default;
+    const SellCryptoIndexer = (await require('App/lib/indexer/SellCryptoIndexer')).default;
 
     let transactions = await Transaction.query()
       .where('status', transactionStatus.TRANSACTION_CREATED)
       .where('type', transactionType.CRYPTO_OFFRAMP)
 
     for (const transaction of transactions) {
-      new TransactionIndexer(transaction.uniqueId).__initializer()
+      new SellCryptoIndexer(transaction.uniqueId).__initializer()
     }
 
   }

@@ -1,16 +1,21 @@
 import { getEthersProvider } from "App/helpers/utils";
-import { supportedChains, transactionStatus } from "App/helpers/types";
+import { supportedChains, transactionStatus, transactionType } from "App/helpers/types";
 import Transaction from "App/models/Transaction";
 import abiManager from "../contract-wallet/utils";
 import Currency from "App/models/Currency";
 import Env from '@ioc:Adonis/Core/Env'
 import { ethers } from "ethers";
 import WebSocketsController from "App/controllers/http/WebSocketsController";
+import TransactionsController from "App/controllers/http/TransactionsController";
 
 const erc20Abi = abiManager.erc20Abi.abi
 
 
-export default class TransactionIndexer {
+/**
+ * This indexer is specifically for tracking & confirming
+ * buy transactions in the system.
+ */
+export default class BuyCryptoIndexer {
   private transferEventMatched: boolean;
   private expectedAmountMatched: boolean;
   private transactionHashMatched: string | null;
@@ -43,9 +48,9 @@ export default class TransactionIndexer {
         .where('unique_id', this.txnUniqueId);
 
       this.currency = await Currency.query()
-        .where('unique_id', this.transaction[0].senderCurrencyId)
+        .where('unique_id', this.transaction[0].recieverCurrencyId)
       if (this.currency[0].type !== 'crypto') {
-        console.error('error: ' + this.txnUniqueId + ' senderCurrency isnt crypto!')
+        console.error('error: ' + this.txnUniqueId + ' recievingCurrency isnt crypto!')
         return;
       }
 
@@ -84,11 +89,20 @@ export default class TransactionIndexer {
     return new Promise((resolve) => {
       // @ts-ignore
       this.tokenContract.on('Transfer', async (from, to, amount, event) => {
-        const expectedCurrencyAmount = this.transaction[0].amountInUsd * this.transaction[0].sendingCurrencyUsdRate
+
+        let txnType = this.transaction[0].type === transactionType.BUY_CRYPTO ? "userBuy" : "userSell";
+        if (txnType !== "userBuy") {
+          console.error('This should be a buy crypto transaction!')
+          return;
+        }
+
+        let actualAmountUserReceives = new TransactionsController()
+          ._calcActualAmountUserRecieves(this.transaction, txnType);
+
         const decimalValue = parseInt(amount) / 10 ** 18
 
-        if (to.toLowerCase() === String(this.transaction[0].walletAddress).toLowerCase()
-          && decimalValue >= expectedCurrencyAmount) {
+        if (to.toLowerCase() === String(this.transaction[0].recievingWalletAddress).toLowerCase()
+          && decimalValue >= actualAmountUserReceives) {
           this.transactionHashMatched = event.transactionHash;
           this.transferEventMatched = true;
           this.expectedAmountMatched = true;

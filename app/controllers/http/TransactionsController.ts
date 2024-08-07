@@ -3,7 +3,7 @@ import { schema } from '@ioc:Adonis/Core/Validator'
 import Currency from 'App/models/Currency';
 import Transaction from 'App/models/Transaction';
 import { formatErrorMessage, formatSuccessMessage } from 'App/helpers/utils';
-import TransactionIndexer from 'App/lib/indexer/Indexer';
+import SellCryptoIndexer from 'App/lib/indexer/SellCryptoIndexer';
 import { transactionStatus, transactionType } from 'App/helpers/types';
 import { DateTime } from 'luxon';
 import RolesController from './RolesController';
@@ -53,7 +53,7 @@ export default class TransactionsController extends RolesController {
       });
 
       if (result !== null) {
-        new TransactionIndexer(result.uniqueId).__initializer()
+        new SellCryptoIndexer(result.uniqueId).__initializer()
 
         /**
          * send email of transaction created.
