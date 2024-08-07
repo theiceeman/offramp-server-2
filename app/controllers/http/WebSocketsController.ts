@@ -54,12 +54,12 @@ export default class WebSocketsController {
   }
 
 
-  public async closeConnection(txnId: string) {
+  public async closeConnection(connectionId: string) {
     try {
-      console.log('close connection,', txnId)
+      console.log('close connection,', connectionId)
 
       await SocketConnection.query()
-        .where('transaction_id', txnId)
+        .where('socket_connection_id', connectionId)
         .delete()
 
       // if (result == null) throw new Error("Action failed!")
