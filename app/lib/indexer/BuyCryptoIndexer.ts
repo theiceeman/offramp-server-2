@@ -156,7 +156,7 @@ export default class BuyCryptoIndexer {
       }
 
       if (transactionConfirmed) {
-        data.status = transactionStatus.TRANSFER_CONFIRMED;
+        data.status = transactionStatus.COMPLETED;
       } else {
         data.status = transactionStatus.FAILED;
       }
