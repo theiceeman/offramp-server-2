@@ -89,7 +89,7 @@ export default class Flutterwave {
 
       let recievingCurrencyNetwork = txn[0].recieverCurrency.network as unknown as supportedChains;
       let actualAmountUserReceives = new TransactionsController()
-        ._calcActualAmountUserRecieves(txn[0], txnType);
+        ._calcActualAmountUserRecieves(txn, txnType);
 
       new SystemWallet(recievingCurrencyNetwork)
         .transferToken(actualAmountUserReceives, txn[0].recieverCurrency.tokenAddress, txn[0].recievingWalletAddress)
