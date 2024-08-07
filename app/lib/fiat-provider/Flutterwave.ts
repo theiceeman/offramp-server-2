@@ -53,7 +53,7 @@ export default class Flutterwave {
       const secretHash = process.env.FLW_SECRET_HASH;
       const signature = request.headers()["verif-hash"];
 
-      console.log({ signature, secretHash })
+      // console.log({ signature, secretHash })
       // Verify req is from flutterwave
       if (!signature || (signature !== secretHash))
         throw new Error('signature error')
@@ -70,6 +70,7 @@ export default class Flutterwave {
 
       // call flutterwave to verify
       const flutterwaveResponse = await new this.sdk.Transaction.verify({ id: payload?.data?.id });
+      console.log({flutterwaveResponse})
       let txnType: "userBuy" | "userSell" = txn[0].type === transactionType.BUY_CRYPTO ? "userBuy" : "userSell";
       let actualAmountUserSends = new TransactionsController()._calcActualAmountUserSends(txn, txnType);
 

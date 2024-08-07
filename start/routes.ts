@@ -121,9 +121,6 @@ Route.group(() => {
 }).prefix('/admin/ticket').middleware('auth:admin')
 
 
-// import Route from '@ioc:Adonis/Core/Route'
-// Importing the ExampleService
-
 Route.post('transaction/flutterwave/process-web-hook', async (context: HttpContextContract) => {
   try {
     const payload = context.request.body();

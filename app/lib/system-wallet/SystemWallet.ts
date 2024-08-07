@@ -21,6 +21,9 @@ const erc20Abi = abiManager.erc20Abi.abi as unknown as AbiItem;
 const walletContractAbi = abiManager.walletContractAbi
   .abi as unknown as AbiItem;
 
+/**
+ * Class for managing system wallet, where crypto liquidity is stored.
+ */
 export default class SystemWallet {
   private _systemWalletAddress = process.env.OWNER_PUB_KEY;
   private network;
