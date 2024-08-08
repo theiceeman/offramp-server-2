@@ -9,7 +9,7 @@ Ws.boot()
  * Listen for incoming socket connections
  */
 Ws.io.on('connection', (socket: Socket) => {
-  console.log('ws client connected.')
+  console.error('ws client connected.')
   let connections: Array<string> = []
   const socketId = genRandomUuid();
 
@@ -21,15 +21,15 @@ Ws.io.on('connection', (socket: Socket) => {
 
     socket.join(socketId)
     connections.push(socketId)
-    console.log({ connections })
+    console.error({ connections })
 
     // Ws.io.to(socketId).emit("transaction_status", { status: 'seen', txnId });
-    console.log('connection registered', socketId)
+    console.error('connection registered', socketId)
   })
 
 
   socket.on('close_connection', async () => {
-    console.log('ws connection closed.', socketId)
+    console.error('ws connection closed.', socketId)
 
     if (connections.length < 1) return;
     await new WebSocketsController()
@@ -38,7 +38,7 @@ Ws.io.on('connection', (socket: Socket) => {
   })
 
   // socket.on('disconnect', async () => {
-  //   console.log('ws client disconnected.', socket.id);
+  //   console.error('ws client disconnected.', socket.id);
 
   //   if (connections.length < 1) return;
   //   await new WebSocketsController()
@@ -49,7 +49,7 @@ Ws.io.on('connection', (socket: Socket) => {
 
 
   socket.on('my other event', (data) => {
-    console.log(data)
+    console.error(data)
   })
 })
 
