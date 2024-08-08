@@ -56,7 +56,7 @@ export default class WebSocketsController {
 
   public async closeConnection(connectionId: string) {
     try {
-      console.log('close connection,', connectionId)
+      // console.log('close connection,', connectionId)
 
       await SocketConnection.query()
         .where('socket_connection_id', connectionId)
