@@ -68,6 +68,9 @@ export function getRpcUrl(network: supportedChains) {
     case 'sepolia':
       url = Env.get('SEPOLIA_RPC');
       break;
+    case 'assetchain_testnet':
+      url = Env.get('ASSETCHAIN_TESTNET_RPC');
+      break;
     case 'local':
       url = 'http://127.0.0.1:8545/';
       break;
@@ -88,6 +91,9 @@ export function getEthersProvider(network: supportedChains) {
     case 'sepolia':
       client = new ethers.providers.JsonRpcProvider(Env.get('SEPOLIA_RPC'));
       break;
+    case 'assetchain_testnet':
+      client = new ethers.providers.JsonRpcProvider(Env.get('ASSETCHAIN_TESTNET_RPC'));
+      break;
     case 'local':
       client = new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545/');
       break;
@@ -106,6 +112,10 @@ export const contractAddress = {
   sepolia: {
     FACTORY_CONTRACT_ADDRESS: '0x028bA0F1A498AdCD86535053bd357899Bf9ADAb9',
     WALLET_CONTRACT_ADDRESS: '0x5A110FF22233AD6AC6196948f72bEcE1f5196179',
+  },
+  assetchain_testnet: {
+    FACTORY_CONTRACT_ADDRESS: '0x381AFE71090cf71B75a886EA8833dfc9683c57b6',
+    WALLET_CONTRACT_ADDRESS: '0x43d77792b5992fE8c3e1F863e276c7826A806c9C',
   }
 }
 

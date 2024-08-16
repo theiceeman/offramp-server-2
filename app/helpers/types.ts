@@ -2,6 +2,7 @@
 export enum supportedChains {
   bsc = 'bsc',
   sepolia = 'sepolia',
+  assetchain_testnet = 'assetchain_testnet',
   local = 'local'
 }
 
@@ -9,11 +10,15 @@ export enum currencyNetwork {
   fiat = 'fiat',
   bsc = 'bsc',
   sepolia = 'sepolia',
+  assetchain_testnet = 'assetchain_testnet',
   local = 'local'
 }
 
 export const NETWORKS = {
-  TEST: [supportedChains.sepolia],
+  TEST: [
+    supportedChains.sepolia,
+    supportedChains.assetchain_testnet
+  ],
   MAIN: [supportedChains.bsc]
 };
 

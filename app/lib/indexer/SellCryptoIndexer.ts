@@ -123,7 +123,8 @@ export default class SellCryptoIndexer {
         console.info(`polling block confirmations for txnHash: ${txnHash}...`)
 
         let txnReciept = await this.provider.getTransaction(txnHash);
-        if (txnReciept?.confirmations >= 15) {
+        // if (txnReciept?.confirmations >= 15) {
+        if (txnReciept?.confirmations >= 1) {
           transactionConfirmed = true
           clearInterval(intervalId);
           resolve({ status: true, txnHash, txnUniqueId, transactionConfirmed });
