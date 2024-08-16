@@ -173,6 +173,7 @@ export default class TransactionsController extends RolesController {
       let data = await Transaction.query()
         .where('user_id', uniqueId)
         .where('is_deleted', false)
+        .orderBy('created_at', 'desc')
 
       response.status(200).json({ data });
 
