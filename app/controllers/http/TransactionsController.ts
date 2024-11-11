@@ -279,6 +279,39 @@ export default class TransactionsController extends RolesController {
     }
   }
 
+  /**
+   * For admin / lp to set a transaction as failed.
+   * @param param0
+   */
+  public async setStatusFailed({ request, response, auth }: HttpContextContract) {
+    try {
+      const user = auth.use('admin').user ?? '';
+      if (!user) throw new Error('Authentication error!')
+
+      const data = request.body();
+      const requestSchema = schema.create({ txnId: schema.string({ trim: true }) })
+      const messages = { required: 'The {{ field }} is required.' }
+      await request.validate({ schema: requestSchema, messages });
+
+      let transaction = await Transaction.query().where('unique_id', data.txnId)
+      if (transaction[0].status === transactionStatus.COMPLETED)
+        throw new Error('Transaction already processed!')
+
+      let result = await Transaction.query().where('unique_id', data.txnId)
+        .update({ status: transactionStatus.FAILED, processedBy: user.uniqueId })
+
+      if (result[0] > 0) {
+
+        response.status(200).json({ data: "Transaction, now set to failed." });
+      } else {
+        throw new Error("Action failed!");
+      }
+
+    } catch (error) {
+      response.status(400).json(await formatErrorMessage(error))
+    }
+  }
+
 
   /**
    * For admins / lp to release transaction back into the pool for others to process.

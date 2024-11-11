@@ -70,6 +70,7 @@ Route.group(() => {
 
 Route.group(() => {
   Route.patch('/processing', 'TransactionsController.setStatusProcessing')
+  Route.patch('/failed', 'TransactionsController.setStatusFailed')
   Route.patch('/complete', 'TransactionsController.setStatusComplete')
   Route.patch('/confirmed', 'TransactionsController.reverseStatusToConfirmed')
 }).prefix('/admin/transaction/offramp-crypto').middleware('auth:admin')
