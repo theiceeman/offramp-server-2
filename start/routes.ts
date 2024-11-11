@@ -125,6 +125,7 @@ Route.group(() => {
 Route.post('transaction/flutterwave/process-web-hook', async (context: HttpContextContract) => {
   try {
     const payload = context.request.body();
+    console.log('fwv payload', payload)
     let txn = await Transaction.query().where('fiat_provider_tx_ref', payload?.data?.tx_ref)
     const recievingCurrency = await Currency.query().where('unique_id', txn[0].recieverCurrencyId)
 
