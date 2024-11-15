@@ -18,9 +18,8 @@ export default class Flutterwave {
   private sdk;
 
   constructor(environment: 'prod' | 'dev') {
-    if (environment === 'dev') {
-      this.sdk = new FlutterwaveRaveV3(FLW_TESTNET_PUBLIC_KEY, FLW_TESTNET_SECRET_KEY);
-    }
+    this.sdk = new FlutterwaveRaveV3(FLW_TESTNET_PUBLIC_KEY, FLW_TESTNET_SECRET_KEY);
+
   }
 
   public async initBankTransfer(txRef: string, amount: string, email: string): Promise<any> {
