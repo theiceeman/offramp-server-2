@@ -180,7 +180,7 @@ export default class SystemWallet {
       data: action.encodeABI(),
       // gas: 1500000,
       gas: await action.estimateGas({ from: process.env.OWNER_PUB_KEY }),
-      gasPrice: 8000000000000,
+      gasPrice: await this.client.eth.getGasPrice(), // Dynamically fetch the gas price
     };
     const createTransaction = await this.client.eth.accounts.signTransaction(
       tx,
