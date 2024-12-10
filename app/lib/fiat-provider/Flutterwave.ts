@@ -99,7 +99,7 @@ export default class Flutterwave {
       }
 
       // Start indexer process
-      await startIndexerProcess(txn[0].uniqueId);
+      startIndexerProcess(txn[0].uniqueId);
 
 
       new SystemWallet(recievingCurrencyNetwork)
