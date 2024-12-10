@@ -22,8 +22,7 @@
     "@adonisjs/core",
     "@adonisjs/auth",
     "@adonisjs/lucid",
-    "./providers/IndexerProvider",
-    "@adonisjs/redis"
+    "./providers/IndexerProvider"
   ],
   "aceProviders": [
     "@adonisjs/repl"
