@@ -8,179 +8,153 @@ import { ethers } from "ethers";
 import WebSocketsController from "App/controllers/http/WebSocketsController";
 import TransactionsController from "App/controllers/http/TransactionsController";
 
-const erc20Abi = abiManager.erc20Abi.abi
+const erc20Abi = abiManager.erc20Abi.abi;
 
-
-/**
- * This indexer is specifically for tracking & confirming
- * buy transactions in the system.
- */
 export default class BuyCryptoIndexer {
-  private transferEventMatched: boolean;
-  private expectedAmountMatched: boolean;
-  private transactionHashMatched: string | null;
-
   private provider;
   private tokenContract;
-
   private transaction;
   private currency;
   private txnUniqueId;
-
+  private startBlock: number;
+  private endBlock: number;
+  private blocksScanned: number = 0;
 
   constructor(txnId: any) {
     this.txnUniqueId = txnId;
-    this.transferEventMatched = false;
-    this.expectedAmountMatched = false;
-    this.transactionHashMatched = null;
   }
 
-
-
-  /**
-   * Pseudo constructor for indexer class, due to async function calls.
-   * @param txnId
-   * @returns void
-   */
   public __initializer = async () => {
     try {
+      console.log('initializing..');
       this.transaction = await Transaction.query()
         .where('unique_id', this.txnUniqueId);
 
       this.currency = await Currency.query()
-        .where('unique_id', this.transaction[0].recieverCurrencyId)
+        .where('unique_id', this.transaction[0].recieverCurrencyId);
+
       if (this.currency[0].type !== 'crypto') {
-        console.error('error: ' + this.txnUniqueId + ' recievingCurrency isnt crypto!')
+        console.error('error: ' + this.txnUniqueId + ' recievingCurrency isnt crypto!');
         return;
       }
 
-      this.provider = getEthersProvider(supportedChains[this.currency[0].network])
+      this.provider = getEthersProvider(supportedChains[this.currency[0].network]);
       const wallet = new ethers.Wallet(Env.get('OWNER_PRV_KEY'), this.provider);
       this.tokenContract = new ethers.Contract(this.currency[0].tokenAddress, erc20Abi, wallet);
 
-      let transferEvents = await this.listenForTransferEvents()
-      this.logCurrentStatus();
-      if (!transferEvents) {
+      // Set initial block range
+      this.startBlock = await this.provider.getBlockNumber();
+      this.endBlock = this.startBlock + 1200; // Look ahead ~1 hour
+
+      const matchingTransfer = await this.monitorFutureBlocks() as Transaction;
+      if (!matchingTransfer) {
+        await this.handleTransactionStatus(null, this.txnUniqueId, false);
         return;
       }
 
-      let confirmation: any = await this.streamNewBlocks()
-      this.logCurrentStatus();
-      if (!confirmation.status) {
-        return;
-      }
-
-      let { txnHash, txnUniqueId, transactionConfirmed } = confirmation;
-      await this.handleTransactionStatus(txnHash, txnUniqueId, transactionConfirmed)
-      this.logCurrentStatus();
+      const confirmed = await this.waitForConfirmations(matchingTransfer.transactionHash);
+      await this.handleTransactionStatus(matchingTransfer.transactionHash, this.txnUniqueId, confirmed);
     } catch (error) {
-      console.error(error)
+      console.error('Indexer error:', error);
+      await this.handleTransactionStatus(null, this.txnUniqueId, false);
     }
   }
 
+  private monitorFutureBlocks = async () => {
+    console.log('monitoring..')
+    const filter = this.tokenContract.filters.Transfer(
+      null,
+      this.transaction[0].recievingWalletAddress
+    );
 
-
-  /**
-   * Listens for transfer events on the crypto, then filters for matching `to` address & `amount`.
-   */
-  private listenForTransferEvents = async () => {
-    console.info(`listening for Transfer Events on txnId:${this.txnUniqueId}...`)
-
-    return new Promise((resolve) => {
-      // @ts-ignore
-      this.tokenContract.on('Transfer', async (from, to, amount, event) => {
-
-        let txnType = this.transaction[0].type === transactionType.BUY_CRYPTO ? "userBuy" : "userSell";
-        if (txnType !== "userBuy") {
-          console.error('This should be a buy crypto transaction!')
-          return;
-        }
-
-        let actualAmountUserReceives = new TransactionsController()
-          ._calcActualAmountUserRecieves(this.transaction, txnType);
-
-        const decimalValue = parseInt(amount) / 10 ** 18
-
-        if (to.toLowerCase() === String(this.transaction[0].recievingWalletAddress).toLowerCase()
-          && decimalValue >= actualAmountUserReceives) {
-          this.transactionHashMatched = event.transactionHash;
-          this.transferEventMatched = true;
-          this.expectedAmountMatched = true;
-          resolve(true);
-        }
-      });
-    });
-  }
-
-
-
-  /**
-   * Polls the blockchain at intervals, to validate no of confirmations on transaction.
-   */
-  private streamNewBlocks = async () => {
-    const txnHash = this.transactionHashMatched;
-    const txnUniqueId = this.txnUniqueId;
-    const eventMatched = this.transactionHashMatched;
-    const amountMatched = this.expectedAmountMatched;
-
-    let transactionConfirmed = false;
-    if (!eventMatched || !amountMatched || txnHash == null) {
-      return { status: false, txnHash, txnUniqueId, transactionConfirmed };
+    const txnType = this.transaction[0].type === transactionType.BUY_CRYPTO ? "userBuy" : "userSell";
+    if (txnType !== "userBuy") {
+      console.error('This should be a buy crypto transaction!');
+      return null;
     }
 
-    return new Promise((resolve) => {
-      const intervalId = setInterval(async () => {
-        console.info(`polling block confirmations for txnHash: ${txnHash}...`)
+    const expectedAmount = new TransactionsController()
+      ._calcActualAmountUserRecieves(this.transaction, txnType);
 
-        let txnReciept = await this.provider.getTransaction(txnHash);
-        if (txnReciept?.confirmations >= 15) {
-          transactionConfirmed = true
-          clearInterval(intervalId);
-          resolve({ status: true, txnHash, txnUniqueId, transactionConfirmed });
+    return new Promise((resolve, reject) => {
+      const checkNewBlocks = async () => {
+        try {
+          const currentBlock = await this.provider.getBlockNumber();
+          console.log(`currentBlock`, currentBlock);
+
+          if (currentBlock > this.endBlock) {
+            console.log('Exceeded maximum block range without finding matching transfer');
+            resolve(null);
+            return;
+          }
+
+          // Only query new blocks we haven't seen yet
+          if (currentBlock > this.startBlock + this.blocksScanned) {
+            const fromBlock = this.startBlock + this.blocksScanned;
+            const toBlock = currentBlock;
+
+            console.log(`Scanning blocks ${fromBlock} to ${toBlock}`);
+            const events = await this.tokenContract.queryFilter(filter, fromBlock, toBlock);
+
+            for (const event of events) {
+              const decimalValue = parseInt(event.args[2].toString()) / 10 ** 18;
+              if (decimalValue >= expectedAmount) {
+                console.log(`Found matching transfer in block ${event.blockNumber}`);
+                resolve(event);
+                return;
+              }
+            }
+
+            this.blocksScanned = toBlock - this.startBlock;
+          }
+
+          // Continue checking
+          setTimeout(checkNewBlocks, 3000); // Check every 3 seconds (BSC block time)
+        } catch (error) {
+          console.error('Error checking blocks:', error);
+          reject(error);
         }
-      }, 60000) // 1 min
+      };
+
+      // Start checking
+      checkNewBlocks();
     });
   }
 
+  private waitForConfirmations = async (txHash: string): Promise<boolean> => {
+    const maxAttempts = 15;
+    const pollInterval = 10000; // 10 secs
 
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      console.info(`Checking confirmations for ${txHash} (attempt ${attempt + 1}/${maxAttempts})`);
 
-  /**
-   * Update transaction status in DB according to the indexer status.
-   */
-  private handleTransactionStatus = async (txnHash, txnUniqueId, transactionConfirmed) => {
-    console.log(`updating status for txnId: ${txnUniqueId}...`)
+      const txReceipt = await this.provider.getTransaction(txHash);
+      if (txReceipt?.confirmations >= 15) {
+        return true;
+      }
+
+      await new Promise(resolve => setTimeout(resolve, pollInterval));
+    }
+
+    return false;
+  }
+
+  private handleTransactionStatus = async (txnHash: string | null, txnUniqueId: string, transactionConfirmed: boolean) => {
     try {
-      let data = {
+      const data = {
         transaction_hash: txnHash,
-        status: ''
-      }
+        status: transactionConfirmed ? transactionStatus.COMPLETED : transactionStatus.FAILED
+      };
 
-      if (transactionConfirmed) {
-        data.status = transactionStatus.COMPLETED;
-      } else {
-        data.status = transactionStatus.FAILED;
-      }
-
-      await Transaction.query().where("unique_id", txnUniqueId)
+       await Transaction.query()
+        .where("unique_id", txnUniqueId)
         .update(data);
+      // console.log('handling...', txnUniqueId, vv); return;
 
       await new WebSocketsController()
-        .emitStatusUpdateToClient(txnUniqueId)
+        .emitStatusUpdateToClient(txnUniqueId);
     } catch (error) {
-      console.error(error)
+      console.error('Error updating transaction status:', error);
     }
   }
-
-
-
-  private logCurrentStatus = () => {
-    console.info({
-      transferEventMatched: this.transferEventMatched,
-      expectedAmountMatched: this.expectedAmountMatched,
-      transactionHashMatched: this.transactionHashMatched
-    })
-
-  }
-
-
 }

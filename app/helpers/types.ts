@@ -45,3 +45,17 @@ export enum transactionProcessingType {
   AUTO = 'AUTO',
   MANUAL = 'MANUAL'
 }
+
+export interface IPCMessage {
+  type: 'socket_emit';
+  data: {
+    socketId: string;
+    status: string;
+    txnId: string;
+  }
+}
+
+export const PROCESS_TYPES = {
+  APP: 'application',
+  INDEXER: 'indexer'
+} as const;

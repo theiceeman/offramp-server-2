@@ -127,10 +127,11 @@ Route.post('transaction/flutterwave/process-web-hook', async (context: HttpConte
     const payload = context.request.body();
     console.log('fwv payload', payload)
     let txn = await Transaction.query().where('fiat_provider_tx_ref', payload?.data?.tx_ref)
+    // console.log('txn',txn)
     const recievingCurrency = await Currency.query().where('unique_id', txn[0].recieverCurrencyId)
 
     let isTestTransaction = isTestNetwork(recievingCurrency[0].network)
-    const message = new Flutterwave(isTestTransaction ? 'dev' : 'prod')
+    const message = await new Flutterwave(isTestTransaction ? 'dev' : 'prod')
       .processWebhook(context);
 
     context.response.send(message);

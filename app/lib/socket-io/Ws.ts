@@ -16,7 +16,7 @@ class Ws {
     }
 
     this.booted = true
-    this.io = new Server(AdonisServer.instance!, {
+    global.io = new Server(AdonisServer.instance!, {
       cors: {
         origin: process.env.CLIENT_URL
       }

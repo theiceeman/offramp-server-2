@@ -2,11 +2,11 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import TransactionsController from 'App/controllers/http/TransactionsController';
 import WebSocketsController from 'App/controllers/http/WebSocketsController';
-import { supportedChains, transactionStatus, transactionType } from 'App/helpers/types';
+import { PROCESS_TYPES, supportedChains, transactionStatus, transactionType } from 'App/helpers/types';
 import Transaction from 'App/models/Transaction';
 import FlutterwaveRaveV3 from 'flutterwave-node-v3';
 import SystemWallet from '../system-wallet/SystemWallet';
-import BuyCryptoIndexer from '../indexer/BuyCryptoIndexer';
+import { startIndexerProcess } from 'App/services/indexer/Process';
 
 const FLW_TESTNET_PUBLIC_KEY = process.env.FLW_TESTNET_PUBLIC_KEY;
 const FLW_TESTNET_SECRET_KEY = process.env.FLW_TESTNET_SECRET_KEY;
@@ -46,6 +46,8 @@ export default class Flutterwave {
 
   public async processWebhook({ request, response }: HttpContextContract) {
     try {
+      process.env.PROCESS_TYPE = PROCESS_TYPES.APP;
+
       const payload = request.body();
 
       const secretHash = process.env.FLW_SECRET_HASH;
@@ -73,7 +75,6 @@ export default class Flutterwave {
       let actualAmountUserSends = new TransactionsController()._calcActualAmountUserSends(txn, txnType);
 
       let data = { status: '' }
-
       if (
         flutterwaveResponse.data.status === "successful"
         && flutterwaveResponse.data.amount >= actualAmountUserSends
@@ -83,6 +84,7 @@ export default class Flutterwave {
         data.status = transactionStatus.FAILED;
       }
 
+
       await Transaction.query()
         .where("fiat_provider_tx_ref", payload?.data?.tx_ref)
         .update(data);
@@ -91,8 +93,14 @@ export default class Flutterwave {
       let actualAmountUserReceives = new TransactionsController()
         ._calcActualAmountUserRecieves(txn, txnType);
 
-      // track transaction status to know when its settled
-      new BuyCryptoIndexer(txn[0].uniqueId).__initializer()
+
+      if (!txn[0].recievingWalletAddress) {
+        throw new Error('recievingWalletAddress does not exist');
+      }
+
+      // Start indexer process
+      startIndexerProcess(txn[0].uniqueId);
+
 
       new SystemWallet(recievingCurrencyNetwork)
         .transferToken(actualAmountUserReceives, txn[0].recieverCurrency.tokenAddress, txn[0].recievingWalletAddress)

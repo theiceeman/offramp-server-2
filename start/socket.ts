@@ -8,7 +8,7 @@ Ws.boot()
 /**
  * Listen for incoming socket connections
  */
-Ws.io.on('connection', (socket: Socket) => {
+global.io.on('connection', (socket: Socket) => {
   console.error('ws client connected.')
   let connections: Array<string> = []
   const socketId = genRandomUuid();
@@ -24,12 +24,12 @@ Ws.io.on('connection', (socket: Socket) => {
     console.error({ connections })
 
     // Ws.io.to(socketId).emit("transaction_status", { status: 'seen', txnId });
-    console.error('connection registered', socketId)
+    console.info('connection registered', socketId)
   })
 
 
   socket.on('close_connection', async () => {
-    console.error('ws connection closed.', socketId)
+    console.info('ws connection closed.', socketId)
 
     if (connections.length < 1) return;
     await new WebSocketsController()

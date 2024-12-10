@@ -1,5 +1,24 @@
 {
   "commands": {
+    "run:indexer": {
+      "settings": {
+        "loadApp": true
+      },
+      "commandPath": "./commands/RunIndexer",
+      "commandName": "run:indexer",
+      "description": "Run the crypto indexer in a separate process",
+      "args": [
+        {
+          "type": "string",
+          "propertyName": "txnId",
+          "name": "txnId",
+          "required": true,
+          "description": "Transaction ID to index"
+        }
+      ],
+      "aliases": [],
+      "flags": []
+    },
     "dump:rcfile": {
       "settings": {},
       "commandPath": "@adonisjs/core/build/commands/DumpRc",

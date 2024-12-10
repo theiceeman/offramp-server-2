@@ -164,6 +164,8 @@ export default class SystemWallet {
    * @param to - address to recieve token.
    */
   public async transferToken(amount, tokenAddress, to) {
+    console.log('transferring...');
+    // return;
     const contract = new this.client.eth.Contract(
       erc20Abi,
       tokenAddress.trim()
