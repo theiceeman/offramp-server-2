@@ -43,7 +43,7 @@ export default class BuyCryptoIndexer {
       this.tokenContract = new ethers.Contract(this.currency[0].tokenAddress, erc20Abi, wallet);
 
       // Set initial block range
-      this.startBlock = await this.provider.getBlockNumber();
+      this.startBlock = await this.provider.getBlockNumber() - 10;
       this.endBlock = this.startBlock + 1200; // Look ahead ~1 hour
 
       const matchingTransfer = await this.monitorFutureBlocks() as Transaction;
