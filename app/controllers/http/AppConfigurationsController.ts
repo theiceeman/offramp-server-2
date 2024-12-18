@@ -45,9 +45,10 @@ export default class AppConfigurationsController {
 
   }
   public async user({ response, auth }: HttpContextContract) {
-    let user = auth.use('user').user;
-    if (!user?.uniqueId)
-      throw new Error('Authentication error!')
+    // let user = auth.use('user').user;
+    // if (!user?.uniqueId)
+    //   throw new Error('Authentication error!')
+
     let settings = await Setting.query().where('id', 1)
     let ngn = await Currency.query().where('symbol', 'NGN')
       .where('network', 'fiat').where('is_deleted', false)

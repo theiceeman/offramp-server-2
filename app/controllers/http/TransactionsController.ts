@@ -119,8 +119,8 @@ export default class TransactionsController extends RolesController {
       const { amountInUsd, recieverCurrencyId, senderCurrencyId, paymentType, recievingWalletAddress }
         = await new TransactionsValidator().validateBuyTransaction(request);
 
-      // await new FiatAccountController().checkIfUserHasBankAccount(uniqueId);
-      // await this.checkIfUserHasPendingTransaction(uniqueId, senderCurrencyId)
+      await new FiatAccountController().checkIfUserHasBankAccount(uniqueId);
+      await this.checkIfUserHasPendingTransaction(uniqueId, senderCurrencyId)
 
       /*
           if kyc setting is on, check if user has completed kyc.
@@ -130,7 +130,7 @@ export default class TransactionsController extends RolesController {
         ._calculateRatesForUserBuying(senderCurrencyId, recieverCurrencyId, amountInUsd, transactionType.BUY_CRYPTO, 'sending')
 
       let { fiatProviderTxRef, bankToProcessTransaction } = await new PaymentProvidersController()
-        .processSelectedFiatPaymentMethod(recieverCurrencyId, paymentType, transaction[0].actual_amount_user_sends)
+        .processSelectedFiatPaymentMethod(recieverCurrencyId, paymentType, transaction[0].actual_amount_user_sends, uniqueId)
 
       let result = await Transaction.create({
         type: transactionType.BUY_CRYPTO,

@@ -6,12 +6,17 @@ import OffRampWallet from "App/lib/contract-wallet/OffRampWallet";
 import Flutterwave from "App/lib/fiat-provider/Flutterwave";
 import Currency from "App/models/Currency";
 import Setting from "App/models/Setting";
+import User from "App/models/User";
 import UserWallet from "App/models/UserWallet";
 
 export default class PaymentProvidersController {
 
-  public async processSelectedFiatPaymentMethod(receivingCurrencyId, paymentType, actualAmountUserSends) {
+  public async processSelectedFiatPaymentMethod(receivingCurrencyId, paymentType, actualAmountUserSends, userId) {
     try {
+      const user = await User.query().where('unique_id', userId)
+      if (!user) {
+        throw new Error('User not found');
+      }
       const recievingCurrency = await Currency.query().where('unique_id', receivingCurrencyId)
       const systemSetting = await Setting.firstOrFail()
 
@@ -30,7 +35,7 @@ export default class PaymentProvidersController {
 
         if (systemSetting.transactionProcessingType === transactionProcessingType.AUTO) {
           let result = await new Flutterwave(isTestTransaction ? 'dev' : 'prod')
-            .initBankTransfer(fiatProviderTxRef, String(actualAmountUserSends), 'okorieebube1@gmail.com')
+            .initBankTransfer(fiatProviderTxRef, String(actualAmountUserSends), user[0].email)
 
           bankToProcessTransaction.defaultAccountBank = result?.meta?.authorization?.transfer_bank;
           bankToProcessTransaction.defaultAccountNo = result?.meta?.authorization?.transfer_account;

@@ -7,7 +7,7 @@ import Transaction from 'App/models/Transaction';
 
 
 Route.get('/app/global-configuration', 'AppConfigurationsController.admin').middleware('auth:admin')
-Route.get('/app/user/global-configuration', 'AppConfigurationsController.user').middleware('auth:user')
+Route.get('/app/user/global-configuration', 'AppConfigurationsController.user')
 
 Route.group(() => {
   Route.post('/login', 'AuthUserController.login')
