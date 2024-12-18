@@ -44,7 +44,7 @@ export default class AppConfigurationsController {
     response.status(200).json(data)
 
   }
-  public async user({ response, auth }: HttpContextContract) {
+  public async user({ response }: HttpContextContract) {
     // let user = auth.use('user').user;
     // if (!user?.uniqueId)
     //   throw new Error('Authentication error!')

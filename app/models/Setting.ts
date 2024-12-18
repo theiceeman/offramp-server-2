@@ -35,6 +35,12 @@ export default class Setting extends BaseModel {
   @column()
   public defaultAccountNo: string
 
+  @column()
+  public minTransactionAmount: number
+
+  @column()
+  public maxTransactionAmount: number
+
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
 

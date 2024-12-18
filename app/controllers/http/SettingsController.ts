@@ -34,6 +34,8 @@ export default class SettingsController {
           default_account_bank: data?.default_account_bank ?? setting.defaultAccountBank,
           default_account_name: data?.default_account_name ?? setting.defaultAccountName,
           default_account_no: data?.default_account_no ?? setting.defaultAccountNo,
+          min_transaction_amount: data?.min_transaction_amount ?? setting.minTransactionAmount,
+          max_transaction_amount: data?.max_transaction_amount ?? setting.maxTransactionAmount,
         })
 
       await SettingsUpdateLog.create({
@@ -63,7 +65,7 @@ export default class SettingsController {
           'enforce_kyc', 'transaction_fee_percentage', 'buy_rate_percentage',
           'sell_rate_percentage', 'system_profit_percentage', 'lp_profit_percentage',
           'transaction_processing_type', 'default_account_bank', 'default_account_no',
-          'default_account_name'
+          'default_account_name','min_transaction_amount','max_transaction_amount'
         )
 
       response.status(200).json({ data: data[0] });

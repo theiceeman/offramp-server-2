@@ -17,6 +17,8 @@ export default class extends BaseSchema {
             table.string('default_account_bank', 255).notNullable()
             table.string('default_account_no', 255).notNullable()
             table.string('default_account_name', 255).notNullable()
+            table.float('min_transaction_amount', 255).notNullable()  // in usd
+            table.float('max_transaction_amount', 255).notNullable()  // in usd
 
             /**
              * Uses timestamptz for PostgreSQL and DATETIME2 for MSSQL
@@ -36,9 +38,11 @@ export default class extends BaseSchema {
                 system_profit_percentage: 30,
                 lp_profit_percentage: 70,
                 transaction_processing_type: transactionProcessingType.MANUAL,
-                default_account_bank: 'Kuda Business',
+                default_account_bank: 'Moniepoint Bank',
                 default_account_no: '4293826673',
-                default_account_name: 'Western Treasury INC.',
+                default_account_name: 'Imperionix Tech Ltd.',
+                min_transaction_amount: 1,
+                max_transaction_amount: 10000,
                 created_at: new Date(),
                 updated_at: new Date(),
             })
