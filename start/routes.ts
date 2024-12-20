@@ -14,6 +14,7 @@ Route.group(() => {
   Route.post('/signup', 'AuthUserController.signup')
   Route.get('/view', 'AuthUserController.viewLoggedInUser').middleware('auth')
   Route.patch('/update', 'AuthUserController.updateLoggedInUser').middleware('auth')
+  Route.post('/logout', 'AuthUserController.logout').middleware('auth')
 }).prefix('/user/account')
 
 Route.group(() => {

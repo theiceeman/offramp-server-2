@@ -59,6 +59,15 @@ export default class AuthUserController {
     }
   }
 
+  public async logout({ auth, response }: HttpContextContract) {
+    try {
+      await auth.use('user').revoke();
+      response.status(200).json({ revoked: true });
+    } catch (error) {
+      response.status(400).json({ data: 'Failed to revoke token' });
+    }
+  }
+
   public async viewLoggedInUser({ response, auth }: HttpContextContract) {
     try {
 
