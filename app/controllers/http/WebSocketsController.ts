@@ -32,25 +32,27 @@ export default class WebSocketsController {
         .where('unique_id', txnId)
 
       // In indexer process - send message to parent
-      if (process.env.PROCESS_TYPE === PROCESS_TYPES.INDEXER) {
-        const message: IPCMessage = {
-          type: 'socket_emit',
-          data: {
-            socketId: connection[0].socketConnectionId,
-            status: transaction[0].status,
-            txnId
-          }
-        };
-        process.send?.(message);
-      } else {
-        if (global.io) {
-          global.io.to(connection[0].socketConnectionId)
-            .emit('transaction_status', {
+      connection.forEach((conn) => {
+        if (process.env.PROCESS_TYPE === PROCESS_TYPES.INDEXER) {
+          const message: IPCMessage = {
+            type: 'socket_emit',
+            data: {
+              socketId: conn.socketConnectionId,
               status: transaction[0].status,
               txnId
-            });
+            }
+          };
+          process.send?.(message);
+        } else {
+          if (global.io) {
+            global.io.to(conn.socketConnectionId)
+              .emit('transaction_status', {
+                status: transaction[0].status,
+                txnId
+              });
+          }
         }
-      }
+      });
 
     } catch (error) {
       throw new Error(error.message)
