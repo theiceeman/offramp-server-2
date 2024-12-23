@@ -74,6 +74,12 @@ export default class Flutterwave {
       let txnType: "userBuy" | "userSell" = txn[0].type === transactionType.BUY_CRYPTO ? "userBuy" : "userSell";
       let actualAmountUserSends = new TransactionsController()._calcActualAmountUserSends(txn, txnType);
 
+      console.log('actualAmountUserSends: ', actualAmountUserSends);
+      console.log('flutterwaveResponse.data.amount: ', flutterwaveResponse.data.amount);
+      console.log('flutterwaveResponse.data.status: ', flutterwaveResponse.data.status);
+      console.log('flutterwaveResponse.data.currency: ', flutterwaveResponse.data.currency);
+
+
       let data = { status: '' }
       if (
         flutterwaveResponse.data.status === "successful"
