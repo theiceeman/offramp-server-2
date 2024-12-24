@@ -27,10 +27,10 @@ export default class TransactionsController extends RolesController {
       const { amountInUsd, recieverCurrencyId, senderCurrencyId }
         = await new TransactionsValidator().validateSellTransaction(request)
 
-        // check for minimum & max amt for transactions
-        let setting = await Setting.firstOrFail()
-        if (amountInUsd < setting.minTransactionAmount || amountInUsd > setting.maxTransactionAmount)
-          throw new Error(`Transaction limit is between ${setting.minTransactionAmount.toLocaleString()} and ${setting.maxTransactionAmount.toLocaleString()} USD.`)
+      // check for minimum & max amt for transactions
+      let setting = await Setting.firstOrFail()
+      if (amountInUsd < setting.minTransactionAmount || amountInUsd > setting.maxTransactionAmount)
+        throw new Error(`Transaction limit is between ${setting.minTransactionAmount.toLocaleString()} and ${setting.maxTransactionAmount.toLocaleString()} USD.`)
 
       /*
           if kyc setting is on, check if user has completed kyc.
@@ -85,10 +85,10 @@ export default class TransactionsController extends RolesController {
       const { amountInUsd, amountType, recieverCurrencyId, senderCurrencyId }
         = await new TransactionsValidator().validateRatesCalculation(request)
 
-        // check for minimum & max amt for transactions
-        // let setting = await Setting.firstOrFail()
-        // if (amountInUsd < setting.minTransactionAmount || amountInUsd > setting.maxTransactionAmount)
-        //   throw new Error(`Transaction limit is between ${setting.minTransactionAmount.toLocaleString()} and ${setting.maxTransactionAmount.toLocaleString()} USD.`)
+      // check for minimum & max amt for transactions
+      // let setting = await Setting.firstOrFail()
+      // if (amountInUsd < setting.minTransactionAmount || amountInUsd > setting.maxTransactionAmount)
+      //   throw new Error(`Transaction limit is between ${setting.minTransactionAmount.toLocaleString()} and ${setting.maxTransactionAmount.toLocaleString()} USD.`)
 
       let result = await new TransactionUtils()
         ._calculateRatesForUserSelling(senderCurrencyId, recieverCurrencyId, amountInUsd, transactionType.CRYPTO_OFFRAMP, amountType)
@@ -445,7 +445,7 @@ export default class TransactionsController extends RolesController {
       actualAmountUserReceives = amountInUsd * transaction[0].recievingCurrencyUsdRate;
     }
 
-    return actualAmountUserReceives;
+    return actualAmountUserReceives.toFixed(2);
   }
 
   /*
@@ -480,7 +480,7 @@ export default class TransactionsController extends RolesController {
       actualAmountUserSends = amountInUsd / transaction[0].sendingCurrencyUsdRate;
     }
 
-    return actualAmountUserSends;
+    return actualAmountUserSends.toFixed(2);
   }
 
   /**
@@ -500,7 +500,7 @@ export default class TransactionsController extends RolesController {
       actualAmountUserSends = amountInUsd / transaction[0].sendingCurrencyUsdRate;
     }
 
-    return actualAmountUserSends;
+    return actualAmountUserSends.toFixed(2);
   }
 
 

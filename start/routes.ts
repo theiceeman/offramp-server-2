@@ -4,7 +4,23 @@ import { isTestNetwork } from 'App/helpers/utils';
 import Flutterwave from 'App/lib/fiat-provider/Flutterwave';
 import Currency from 'App/models/Currency';
 import Transaction from 'App/models/Transaction';
+import TransactionsController from 'App/controllers/http/TransactionsController';
 
+
+/* Route.get('', async () => {
+  try {
+    let transaction = [{
+      amountInUsd: 0.0120852493489072,
+      sendingCurrencyUsdRate: 1654.91,
+      fee:0
+    }];
+    let type: "userBuy" | "userSell" = "userBuy";
+    let result = new TransactionsController()._calcActualAmountUserSends(transaction, type)
+    console.log({result})
+  } catch (error) {
+    console.error({ error })
+  }
+}); */
 
 Route.get('/app/global-configuration', 'AppConfigurationsController.admin').middleware('auth:admin')
 Route.get('/app/user/global-configuration', 'AppConfigurationsController.user')

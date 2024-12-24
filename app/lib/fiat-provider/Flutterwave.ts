@@ -74,11 +74,6 @@ export default class Flutterwave {
       let txnType: "userBuy" | "userSell" = txn[0].type === transactionType.BUY_CRYPTO ? "userBuy" : "userSell";
       let actualAmountUserSends = new TransactionsController()._calcActualAmountUserSends(txn, txnType);
 
-      console.log('actualAmountUserSends: ', actualAmountUserSends);
-      console.log('flutterwaveResponse.data.amount: ', flutterwaveResponse.data.amount);
-      console.log('flutterwaveResponse.data.status: ', flutterwaveResponse.data.status);
-      console.log('flutterwaveResponse.data.currency: ', flutterwaveResponse.data.currency);
-
 
       let data = { status: '' }
       if (
@@ -90,27 +85,27 @@ export default class Flutterwave {
         data.status = transactionStatus.FAILED;
       }
 
+      if (data.status === transactionStatus.TRANSFER_CONFIRMED) {
 
-      await Transaction.query()
-        .where("fiat_provider_tx_ref", payload?.data?.tx_ref)
-        .update(data);
+        await Transaction.query()
+          .where("fiat_provider_tx_ref", payload?.data?.tx_ref)
+          .update(data);
 
-      let recievingCurrencyNetwork = txn[0].recieverCurrency.network as unknown as supportedChains;
-      let actualAmountUserReceives = new TransactionsController()
-        ._calcActualAmountUserRecieves(txn, txnType);
+        let recievingCurrencyNetwork = txn[0].recieverCurrency.network as unknown as supportedChains;
+        let actualAmountUserReceives = new TransactionsController()
+          ._calcActualAmountUserRecieves(txn, txnType);
 
+        if (!txn[0].recievingWalletAddress) {
+          throw new Error('recievingWalletAddress does not exist');
+        }
 
-      if (!txn[0].recievingWalletAddress) {
-        throw new Error('recievingWalletAddress does not exist');
+        // Start indexer process
+        startIndexerProcess(txn[0].uniqueId);
+
+        new SystemWallet(recievingCurrencyNetwork)
+          .transferToken(actualAmountUserReceives, txn[0].recieverCurrency.tokenAddress, txn[0].recievingWalletAddress)
+
       }
-
-      // Start indexer process
-      startIndexerProcess(txn[0].uniqueId);
-
-
-      new SystemWallet(recievingCurrencyNetwork)
-        .transferToken(actualAmountUserReceives, txn[0].recieverCurrency.tokenAddress, txn[0].recievingWalletAddress)
-
       await new WebSocketsController()
         .emitStatusUpdateToClient(txn[0].uniqueId)
 
