@@ -445,7 +445,7 @@ export default class TransactionsController extends RolesController {
       actualAmountUserReceives = amountInUsd * transaction[0].recievingCurrencyUsdRate;
     }
 
-    return actualAmountUserReceives.toFixed(2);
+    return Number(actualAmountUserReceives.toFixed(2));
   }
 
   /*
@@ -480,7 +480,7 @@ export default class TransactionsController extends RolesController {
       actualAmountUserSends = amountInUsd / transaction[0].sendingCurrencyUsdRate;
     }
 
-    return actualAmountUserSends.toFixed(2);
+    return Number(actualAmountUserSends.toFixed(2));
   }
 
   /**
@@ -500,7 +500,7 @@ export default class TransactionsController extends RolesController {
       actualAmountUserSends = amountInUsd / transaction[0].sendingCurrencyUsdRate;
     }
 
-    return actualAmountUserSends.toFixed(2);
+    return Number(actualAmountUserSends.toFixed(2));
   }
 
 

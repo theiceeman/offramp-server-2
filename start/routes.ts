@@ -1,26 +1,26 @@
-import Route from '@ioc:Adonis/Core/Route'
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+import Route from '@ioc:Adonis/Core/Route'
 import { isTestNetwork } from 'App/helpers/utils';
 import Flutterwave from 'App/lib/fiat-provider/Flutterwave';
 import Currency from 'App/models/Currency';
 import Transaction from 'App/models/Transaction';
-import TransactionsController from 'App/controllers/http/TransactionsController';
 
 
-/* Route.get('', async () => {
+Route.get('/', async () => {
   try {
-    let transaction = [{
-      amountInUsd: 0.0120852493489072,
-      sendingCurrencyUsdRate: 1654.91,
-      fee:0
-    }];
-    let type: "userBuy" | "userSell" = "userBuy";
-    let result = new TransactionsController()._calcActualAmountUserSends(transaction, type)
+    let flutterwave = new Flutterwave('prod');
+    let params = {
+      accountBank: 'some_bank',
+      accountNumber: 'some_account_number',
+      amount: 10,
+      txRef: 'some_tx_ref'
+    };
+    let result = await flutterwave.initSendBankTransfer(params);
     console.log({result})
   } catch (error) {
     console.error({ error })
   }
-}); */
+});
 
 Route.get('/app/global-configuration', 'AppConfigurationsController.admin').middleware('auth:admin')
 Route.get('/app/user/global-configuration', 'AppConfigurationsController.user')
@@ -144,7 +144,7 @@ Route.post('transaction/flutterwave/process-web-hook', async (context: HttpConte
     const payload = context.request.body();
     console.log('fwv payload', payload)
     let txn = await Transaction.query().where('fiat_provider_tx_ref', payload?.data?.tx_ref)
-    // console.log('txn',txn)
+
     const recievingCurrency = await Currency.query().where('unique_id', txn[0].recieverCurrencyId)
 
     let isTestTransaction = isTestNetwork(recievingCurrency[0].network)

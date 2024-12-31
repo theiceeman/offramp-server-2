@@ -35,7 +35,7 @@ export default class PaymentProvidersController {
 
         if (systemSetting.transactionProcessingType === transactionProcessingType.AUTO) {
           let result = await new Flutterwave(isTestTransaction ? 'dev' : 'prod')
-            .initBankTransfer(fiatProviderTxRef, String(actualAmountUserSends), user[0].email)
+            .generateBankAccount(fiatProviderTxRef, String(actualAmountUserSends), user[0].email)
 
           bankToProcessTransaction.defaultAccountBank = result?.meta?.authorization?.transfer_bank;
           bankToProcessTransaction.defaultAccountNo = result?.meta?.authorization?.transfer_account;

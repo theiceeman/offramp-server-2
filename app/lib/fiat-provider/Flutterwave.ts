@@ -7,22 +7,35 @@ import Transaction from 'App/models/Transaction';
 import FlutterwaveRaveV3 from 'flutterwave-node-v3';
 import SystemWallet from '../system-wallet/SystemWallet';
 import { startIndexerProcess } from 'App/services/indexer/Process';
+import { IPaymentProvider } from './interface';
 
-const FLW_TESTNET_PUBLIC_KEY = process.env.FLW_TESTNET_PUBLIC_KEY;
-const FLW_TESTNET_SECRET_KEY = process.env.FLW_TESTNET_SECRET_KEY;
+const FLW_PUBLIC_KEY = process.env.FLW_TESTNET_PUBLIC_KEY;
+const FLW_SECRET_KEY = process.env.FLW_TESTNET_SECRET_KEY;
+
+
+const API_BASE_URL = process.env.API_BASE_URL;
+const PAYMENT_PROVIDER_WEBHOOK = process.env.PAYMENT_PROVIDER_WEBHOOK;
+
+
+interface params {
+  accountBank: string;
+  accountNumber: string;
+  amount: number;
+  txRef: string;
+}
 
 /**
  * Library for integration with flutterwave payment provider.
  */
-export default class Flutterwave {
-  private sdk;
+export default class Flutterwave implements IPaymentProvider {
+  private sdk: FlutterwaveRaveV3;
 
   constructor(environment: 'prod' | 'dev') {
-    this.sdk = new FlutterwaveRaveV3(FLW_TESTNET_PUBLIC_KEY, FLW_TESTNET_SECRET_KEY);
+    this.sdk = new FlutterwaveRaveV3(FLW_PUBLIC_KEY, FLW_SECRET_KEY);
 
   }
 
-  public async initBankTransfer(txRef: string, amount: string, email: string): Promise<any> {
+  public async generateBankAccount(txRef: string, amount: string, email: string): Promise<any> {
     try {
       const details = {
         tx_ref: txRef,
@@ -42,6 +55,34 @@ export default class Flutterwave {
 
     }
 
+  }
+
+  public async initSendBankTransfer({ accountBank, accountNumber, amount, txRef }: params): Promise<any> {
+    try {
+      if (!API_BASE_URL || !PAYMENT_PROVIDER_WEBHOOK) {
+        throw new Error('API_BASE_URL or PAYMENT_PROVIDER_WEBHOOK is not defined');
+      }
+      const transferDetails = {
+        account_bank: accountBank,
+        account_number: accountNumber,
+        amount: amount,
+        narration: 'WT Payment',
+        currency: "NGN",
+        reference: txRef,
+        callback_url: API_BASE_URL + PAYMENT_PROVIDER_WEBHOOK,
+        debit_currency: "NGN"
+      };
+
+      const response = await this.sdk.Transfer.initiate(transferDetails);
+
+      if (response.status !== 'success')
+        throw new Error(response.message)
+
+      return response;
+    } catch (error) {
+      console.error(error)
+      throw new Error(error)
+    }
   }
 
   public async processWebhook({ request, response }: HttpContextContract) {
