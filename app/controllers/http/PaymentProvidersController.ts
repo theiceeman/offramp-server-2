@@ -4,6 +4,7 @@ import { supportedChains, transactionProcessingType, userPaymentType } from "App
 import { genRandomUuid, isTestNetwork } from "App/helpers/utils";
 import OffRampWallet from "App/lib/contract-wallet/OffRampWallet";
 import Flutterwave from "App/lib/fiat-provider/Flutterwave";
+import Paystack from "App/lib/fiat-provider/Paystack";
 import Currency from "App/models/Currency";
 import Setting from "App/models/Setting";
 import User from "App/models/User";
@@ -20,33 +21,44 @@ export default class PaymentProvidersController {
       const recievingCurrency = await Currency.query().where('unique_id', receivingCurrencyId)
       const systemSetting = await Setting.firstOrFail()
 
-      let isTestTransaction = isTestNetwork(recievingCurrency[0].network)
+      let isTestTransaction = isTestNetwork(recievingCurrency[0].network)     
       let fiatProviderTxRef = genRandomUuid();
-      let bankToProcessTransaction = {
-        defaultAccountBank: '',
-        defaultAccountNo: '',
-        defaultAccountName: ''
-      };
+      let paymentDetails: any = {};
 
-      if (paymentType === userPaymentType.DEBIT_CARD) {
-        // We charge their debit card directly.
-      }
-      if (paymentType === userPaymentType.BANK_TRANSFER) {
 
-        if (systemSetting.transactionProcessingType === transactionProcessingType.AUTO) {
-          let result = await new Flutterwave(isTestTransaction ? 'dev' : 'prod')
-            .generateBankAccount(fiatProviderTxRef, String(actualAmountUserSends), user[0].email)
+      if (systemSetting.transactionProcessingType === transactionProcessingType.AUTO) {
+        const paystack = new Paystack(isTestTransaction ? 'dev' : 'prod');
+        const result = await paystack.initializePayment(
+          fiatProviderTxRef,
+          String(actualAmountUserSends),
+          user[0].email,
+          paymentType
+        );
 
-          bankToProcessTransaction.defaultAccountBank = result?.meta?.authorization?.transfer_bank;
-          bankToProcessTransaction.defaultAccountNo = result?.meta?.authorization?.transfer_account;
-        } else {
-          bankToProcessTransaction.defaultAccountBank = systemSetting.defaultAccountBank;
-          bankToProcessTransaction.defaultAccountNo = systemSetting.defaultAccountNo;
+        if (paymentType === userPaymentType.BANK_TRANSFER) {
+          paymentDetails = {
+            defaultAccountBank: result.data.bank,
+            defaultAccountNo: result.data.account_number,
+            defaultAccountName: result.data.account_name,
+          };
+        } else if (paymentType === userPaymentType.DEBIT_CARD) {
+          paymentDetails = {
+            authorizationUrl: result.data.authorization_url,
+            accessCode: result.data.access_code,
+            reference: result.data.reference,
+            publicKey: result.data.public_key
+          };
         }
-
+      } else {
+        // Manual processing
+        paymentDetails = {
+          defaultAccountBank: systemSetting.defaultAccountBank,
+          defaultAccountNo: systemSetting.defaultAccountNo,
+          defaultAccountName: systemSetting.defaultAccountName
+        };
       }
 
-      return { fiatProviderTxRef, bankToProcessTransaction }
+      return { fiatProviderTxRef, paymentDetails }
     } catch (error) {
       throw new Error(error.message)
     }

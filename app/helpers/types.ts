@@ -1,4 +1,3 @@
-
 export enum supportedChains {
   bsc = 'bsc',
   sepolia = 'sepolia',

@@ -33,6 +33,7 @@
     "ethers": "^5.4.7",
     "flutterwave-node-v3": "^1.1.10",
     "luxon": "^3.4.4",
+    "paystack-sdk": "^2.5.19",
     "pg": "^8.11.3",
     "proxy-addr": "^2.0.7",
     "reflect-metadata": "^0.2.1",
