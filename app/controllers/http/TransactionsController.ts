@@ -150,7 +150,7 @@ export default class TransactionsController extends RolesController {
       let transaction = await new TransactionUtils()
         ._calculateRatesForUserBuying(senderCurrencyId, recieverCurrencyId, amountInUsd, transactionType.BUY_CRYPTO, 'sending')
 
-      let { fiatProviderTxRef, bankToProcessTransaction } = await new PaymentProvidersController()
+      let { fiatProviderTxRef, paymentDetails } = await new PaymentProvidersController()
         .processSelectedFiatPaymentMethod(recieverCurrencyId, paymentType, transaction[0].actual_amount_user_sends, uniqueId)
 
       let result = await Transaction.create({
@@ -165,7 +165,7 @@ export default class TransactionsController extends RolesController {
         recievingCurrencyUsdRate: transaction[0].recievingCurrencyUsdRate,
         fee: transaction[0].fee,   // fee in USD
         recievingWalletAddress,
-        fiatProviderResult: JSON.stringify(bankToProcessTransaction)
+        fiatProviderResult: JSON.stringify(paymentDetails)
       });
 
       if (result !== null) {
