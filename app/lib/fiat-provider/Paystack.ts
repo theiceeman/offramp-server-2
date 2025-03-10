@@ -13,6 +13,7 @@ import { Paystack as PaystackSDK } from "paystack-sdk";
 import SystemWallet from "../system-wallet/SystemWallet";
 import { startIndexerProcess } from "App/services/indexer/Process";
 import { IPaymentProvider } from "./interface";
+import crypto from "crypto";
 
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
 const PAYSTACK_PUBLIC_KEY = process.env.PAYSTACK_PUBLIC_KEY;
@@ -118,18 +119,17 @@ export default class Paystack implements IPaymentProvider {
         paymentType === userPaymentType.BANK_TRANSFER &&
         response.data.transfer_details
       ) {
-        baseResponse.data = {
-          ...baseResponse.data,
+        Object.assign(baseResponse.data, {
           bank: response.data.transfer_details.bank,
           account_number: response.data.transfer_details.account_number,
           account_name: response.data.transfer_details.account_name,
-        };
+        });
       }
 
       return baseResponse;
     } catch (error) {
-      console.error(error);
-      throw new Error(error);
+      console.error("Error in initializePayment:", error);
+      throw new Error(error.message || "An error occurred while initializing payment");
     }
   }
 
@@ -137,7 +137,7 @@ export default class Paystack implements IPaymentProvider {
     txRef: string,
     amount: string,
     email: string
-  ): Promise<any> {
+  ): Promise<{ status: string; data: BaseResponseData }> {
     return this.initializePayment(
       txRef,
       amount,
@@ -209,9 +209,9 @@ export default class Paystack implements IPaymentProvider {
     return response.data.recipient_code;
   }
 
-  public async processWebhook({ request, response }: HttpContextContract) {
+  public async processWebhook({ request, response }: HttpContextContract):Promise<void> {
     try {
-      process.env.PROCESS_TYPE = PROCESS_TYPES.APP;
+      // const PROCESS_TYPE = PROCESS_TYPES.APP;
 
       const payload = request.body();
       const signature = request.header("x-paystack-signature");
@@ -232,6 +232,10 @@ export default class Paystack implements IPaymentProvider {
           query.select("name", "network", "tokenAddress")
         )
         .where("fiat_provider_tx_ref", payload.data.reference);
+
+        if (!txn.length) {
+          throw new Error("Transaction not found");
+      }
 
       if (txn[0].status === transactionStatus.COMPLETED) {
         throw new Error("Transaction already completed");
@@ -291,15 +295,14 @@ export default class Paystack implements IPaymentProvider {
 
       response.status(200).send("webhook processed.");
     } catch (error) {
-      console.log(error);
-      response.status(401).send("processing webhook failed!");
+      console.error("Webhook processing failed:", error);
+      response.status(400).send({ message: "Webhook processing failed", error: error.message });
     }
   }
 
   private verifyWebhookSignature(payload: any, signature?: string): boolean {
     if (!signature || !PAYSTACK_SECRET_KEY) return false;
 
-    const crypto = require("crypto");
     const hash = crypto
       .createHmac("sha512", PAYSTACK_SECRET_KEY)
       .update(JSON.stringify(payload))
