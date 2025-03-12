@@ -31,28 +31,16 @@ interface params {
 interface PaystackResponse {
   status: boolean;
   message: string;
-  data: PaystackResponseData;
+  data?: PaystackResponseData;
 }
 
 interface PaystackResponseData {
-  authorization_url: string;
-  access_code: string;
   reference: string;
-  transfer_details?: {
-    bank: string;
-    account_number: string;
-    account_name: string;
-  };
-}
-
-interface BaseResponseData {
-  authorization_url: string;
-  access_code: string;
-  reference: string;
-  public_key: string;
-  bank?: string;
-  account_number?: string;
-  account_name?: string;
+  account_number: string;
+  account_name: string;
+  display_text: string;
+  bank: { name: string };
+  account_expires_at: string;
 }
 
 export default class Paystack implements IPaymentProvider {
@@ -60,11 +48,11 @@ export default class Paystack implements IPaymentProvider {
   private publicKey: string;
 
   constructor(environment: "prod" | "dev") {
-    if (!PAYSTACK_SECRET_KEY || !PAYSTACK_PUBLIC_KEY) {
+    if (!PAYSTACK_SECRET_KEY) {
       throw new Error("Paystack API keys not configured");
     }
     this.sdk = new PaystackSDK(PAYSTACK_SECRET_KEY);
-    this.publicKey = PAYSTACK_PUBLIC_KEY;
+    // this.publicKey = PAYSTACK_PUBLIC_KEY;
   }
 
   public async initializePayment(
@@ -72,7 +60,7 @@ export default class Paystack implements IPaymentProvider {
     amount: string,
     email: string,
     paymentType: string
-  ): Promise<{ status: string; data: BaseResponseData }> {
+  ): Promise<PaystackResponse> {
     try {
       const details = {
         reference: txRef,
@@ -80,6 +68,9 @@ export default class Paystack implements IPaymentProvider {
         email: email,
         currency: "NGN",
         callback_url: `${API_BASE_URL}${PAYMENT_PROVIDER_WEBHOOK}`,
+        bank_transfer: {
+          account_expires_at: "2023-09-19T00:00:00Z",
+        },
         channels:
           paymentType === userPaymentType.BANK_TRANSFER
             ? ["bank_transfer"]
@@ -96,7 +87,7 @@ export default class Paystack implements IPaymentProvider {
         },
       };
 
-      const response = (await this.sdk.transaction.initialize(
+      const response = (await this.sdk.charge.create(
         details
       )) as PaystackResponse;
 
@@ -104,32 +95,30 @@ export default class Paystack implements IPaymentProvider {
         throw new Error(response.message);
       }
 
-      const baseResponse: { status: string; data: BaseResponseData } = {
-        status: "success",
-        data: {
-          authorization_url: response.data.authorization_url,
-          access_code: response.data.access_code,
-          reference: response.data.reference,
-          public_key: this.publicKey,
-        },
+      const baseResponse: PaystackResponse = {
+        status: response.status,
+        message: response.message,
+        data: undefined,
       };
 
       // Add bank transfer specific details if applicable
-      if (
-        paymentType === userPaymentType.BANK_TRANSFER &&
-        response.data.transfer_details
-      ) {
-        Object.assign(baseResponse.data, {
-          bank: response.data.transfer_details.bank,
-          account_number: response.data.transfer_details.account_number,
-          account_name: response.data.transfer_details.account_name,
-        });
+      if (paymentType === userPaymentType.BANK_TRANSFER && response.data) {
+        baseResponse.data = {
+          display_text: response.data.display_text,
+          reference: response.data.reference,
+          bank: response.data.bank,
+          account_number: response.data.account_number,
+          account_name: response.data.account_name,
+          account_expires_at: response.data.account_expires_at,
+        };
       }
 
       return baseResponse;
     } catch (error) {
       console.error("Error in initializePayment:", error);
-      throw new Error(error.message || "An error occurred while initializing payment");
+      throw new Error(
+        error.message || "An error occurred while initializing payment"
+      );
     }
   }
 
@@ -137,7 +126,7 @@ export default class Paystack implements IPaymentProvider {
     txRef: string,
     amount: string,
     email: string
-  ): Promise<{ status: string; data: BaseResponseData }> {
+  ): Promise<PaystackResponse> {
     return this.initializePayment(
       txRef,
       amount,
@@ -209,7 +198,10 @@ export default class Paystack implements IPaymentProvider {
     return response.data.recipient_code;
   }
 
-  public async processWebhook({ request, response }: HttpContextContract):Promise<void> {
+  public async processWebhook({
+    request,
+    response,
+  }: HttpContextContract): Promise<void> {
     try {
       // const PROCESS_TYPE = PROCESS_TYPES.APP;
 
@@ -233,8 +225,8 @@ export default class Paystack implements IPaymentProvider {
         )
         .where("fiat_provider_tx_ref", payload.data.reference);
 
-        if (!txn.length) {
-          throw new Error("Transaction not found");
+      if (!txn.length) {
+        throw new Error("Transaction not found");
       }
 
       if (txn[0].status === transactionStatus.COMPLETED) {
@@ -296,7 +288,9 @@ export default class Paystack implements IPaymentProvider {
       response.status(200).send("webhook processed.");
     } catch (error) {
       console.error("Webhook processing failed:", error);
-      response.status(400).send({ message: "Webhook processing failed", error: error.message });
+      response
+        .status(400)
+        .send({ message: "Webhook processing failed", error: error.message });
     }
   }
 

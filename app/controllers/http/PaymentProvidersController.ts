@@ -36,17 +36,17 @@ export default class PaymentProvidersController {
 
         if (paymentType === userPaymentType.BANK_TRANSFER) {
           paymentDetails = {
-            defaultAccountBank: result.data.bank,
-            defaultAccountNo: result.data.account_number,
-            defaultAccountName: result.data.account_name,
+            defaultAccountBank: result.data?.bank.name,
+            defaultAccountNo: result.data?.account_number,
+            defaultAccountName: result.data?.account_name,
           };
         } else if (paymentType === userPaymentType.DEBIT_CARD) {
-          paymentDetails = {
-            authorizationUrl: result.data.authorization_url,
-            accessCode: result.data.access_code,
-            reference: result.data.reference,
-            publicKey: result.data.public_key
-          };
+          // paymentDetails = {
+          //   authorizationUrl: result.data.authorization_url,
+          //   accessCode: result.data.access_code,
+          //   reference: result.data.reference,
+          //   publicKey: result.data.public_key
+          // };
         }
       } else {
         // Manual processing
@@ -56,6 +56,7 @@ export default class PaymentProvidersController {
           defaultAccountName: systemSetting.defaultAccountName
         };
       }
+
 
       return { fiatProviderTxRef, paymentDetails }
     } catch (error) {
