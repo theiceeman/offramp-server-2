@@ -36,6 +36,21 @@ export default class IndexerProvider {
   }
 
   public async ready() {
+    const Database = this.app.container.resolveBinding('Adonis/Lucid/Database')
+
+    // Check if the transactions table exists before querying
+    const tableExists = await Database.rawQuery(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables
+        WHERE table_schema = 'public'
+        AND table_name = 'transactions'
+      )
+    `)
+
+    if (!tableExists.rows[0].exists) {
+      console.log('Transactions table does not exist yet, skipping indexer initialization')
+      return
+    }
     const Transaction = (await require('App/models/Transaction')).default;
     const SellCryptoIndexer = (await require('App/lib/indexer/SellCryptoIndexer')).default;
 
