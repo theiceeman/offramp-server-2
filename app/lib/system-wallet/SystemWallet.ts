@@ -164,16 +164,20 @@ export default class SystemWallet {
    * @param to - address to recieve token.
    */
   public async transferToken(amount, tokenAddress, to) {
-    console.log('transferring...');
+    console.log("transferring...", { amount, tokenAddress, to });
     // return;
     const contract = new this.client.eth.Contract(
       erc20Abi,
       tokenAddress.trim()
     );
-    let _amount = BigNumber.from(
-      (amount * 10 ** 18).toLocaleString("fullwide", { useGrouping: false })
-    );
-    let action = await contract.methods.transfer(to, _amount);
+    // let _amount = BigNumber.from(
+    //   (amount * 10 ** 18).toLocaleString("fullwide", { useGrouping: false })
+    // );
+
+    // Convert to wei (18 decimals)
+    const amountInWei = this.client.utils.toWei(amount, "ether");
+    console.log("Amount in wei:", amountInWei);
+    let action = await contract.methods.transfer(to, amountInWei);
 
     // console.log({ estimateGas: await action.estimateGas({ from }) });
     let tx = {

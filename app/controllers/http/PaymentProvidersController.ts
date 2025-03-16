@@ -3,7 +3,7 @@
 import { supportedChains, transactionProcessingType, userPaymentType } from "App/helpers/types";
 import { genRandomUuid, isTestNetwork } from "App/helpers/utils";
 import OffRampWallet from "App/lib/contract-wallet/OffRampWallet";
-import Paystack from "App/lib/fiat-provider/Paystack";
+import Paystack, { PaystackBankResponseData, PaystackCardResponseData } from "App/lib/fiat-provider/Paystack";
 import Currency from "App/models/Currency";
 import Setting from "App/models/Setting";
 import User from "App/models/User";
@@ -20,7 +20,8 @@ export default class PaymentProvidersController {
       const recievingCurrency = await Currency.query().where('unique_id', receivingCurrencyId)
       const systemSetting = await Setting.firstOrFail()
 
-      let isTestTransaction = isTestNetwork(recievingCurrency[0].network)     
+      // let isTestTransaction = isTestNetwork(recievingCurrency[0].network)    
+      let isTestTransaction = true;
       let fiatProviderTxRef = genRandomUuid();
       let paymentDetails: any = {};
 
@@ -36,17 +37,17 @@ export default class PaymentProvidersController {
 
         if (paymentType === userPaymentType.BANK_TRANSFER) {
           paymentDetails = {
-            defaultAccountBank: result.data?.bank.name,
-            defaultAccountNo: result.data?.account_number,
-            defaultAccountName: result.data?.account_name,
+            defaultAccountBank: (result.data as PaystackBankResponseData)?.bank.name,
+            defaultAccountNo: (result.data as PaystackBankResponseData)?.account_number,
+            defaultAccountName: (result.data as PaystackBankResponseData)?.account_name,
           };
         } else if (paymentType === userPaymentType.DEBIT_CARD) {
-          // paymentDetails = {
-          //   authorizationUrl: result.data.authorization_url,
-          //   accessCode: result.data.access_code,
-          //   reference: result.data.reference,
-          //   publicKey: result.data.public_key
-          // };
+          paymentDetails = {
+            authorizationUrl: (result.data as PaystackCardResponseData)?.authorization_url,
+            accessCode: (result.data as PaystackCardResponseData)?.access_code,
+            reference: (result.data as PaystackCardResponseData)?.reference,
+            publicKey: (result.data as PaystackCardResponseData)?.public_key
+          };
         }
       } else {
         // Manual processing
