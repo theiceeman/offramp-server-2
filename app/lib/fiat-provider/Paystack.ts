@@ -50,7 +50,7 @@ export default class Paystack implements IPaymentProvider {
 
       const payload = {
         email,
-        amount: parseFloat(amount) * 100, // NGN in kobo
+        amount: Math.round(parseFloat(amount) * 100), // NGN in kobo
         currency: "NGN",
         bank_transfer: {
           account_expires_at: null
