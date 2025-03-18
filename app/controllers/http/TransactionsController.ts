@@ -141,7 +141,7 @@ export default class TransactionsController extends RolesController {
       //   throw new Error(`Transaction limit is between ${setting.minTransactionAmount.toLocaleString()} and ${setting.maxTransactionAmount.toLocaleString()} USD.`)
 
       await new FiatAccountController().checkIfUserHasBankAccount(uniqueId);
-      await this.checkIfUserHasPendingTransaction(uniqueId, senderCurrencyId)
+      // await this.checkIfUserHasPendingTransaction(uniqueId, senderCurrencyId)
 
       /*
           if kyc setting is on, check if user has completed kyc.
