@@ -4,6 +4,7 @@ import { supportedChains, transactionProcessingType, userPaymentType } from "App
 import { genRandomUuid, isTestNetwork } from "App/helpers/utils";
 import OffRampWallet from "App/lib/contract-wallet/OffRampWallet";
 import Flutterwave from "App/lib/fiat-provider/Flutterwave";
+import Paystack from "App/lib/fiat-provider/Paystack";
 import Currency from "App/models/Currency";
 import Setting from "App/models/Setting";
 import User from "App/models/User";
@@ -17,10 +18,10 @@ export default class PaymentProvidersController {
       if (!user) {
         throw new Error('User not found');
       }
-      const recievingCurrency = await Currency.query().where('unique_id', receivingCurrencyId)
+      // const recievingCurrency = await Currency.query().where('unique_id', receivingCurrencyId)
       const systemSetting = await Setting.firstOrFail()
 
-      let isTestTransaction = isTestNetwork(recievingCurrency[0].network)
+      // let isTestTransaction = isTestNetwork(recievingCurrency[0].network)
       let fiatProviderTxRef = genRandomUuid();
       let bankToProcessTransaction = {
         defaultAccountBank: '',
@@ -34,11 +35,11 @@ export default class PaymentProvidersController {
       if (paymentType === userPaymentType.BANK_TRANSFER) {
 
         if (systemSetting.transactionProcessingType === transactionProcessingType.AUTO) {
-          let result = await new Flutterwave(isTestTransaction ? 'dev' : 'prod')
+          let result = await new Paystack()
             .generateBankAccount(fiatProviderTxRef, String(actualAmountUserSends), user[0].email)
 
-          bankToProcessTransaction.defaultAccountBank = result?.meta?.authorization?.transfer_bank;
-          bankToProcessTransaction.defaultAccountNo = result?.meta?.authorization?.transfer_account;
+          bankToProcessTransaction.defaultAccountBank = result?.bankName;
+          bankToProcessTransaction.defaultAccountNo = result?.accountNumber;
         } else {
           bankToProcessTransaction.defaultAccountBank = systemSetting.defaultAccountBank;
           bankToProcessTransaction.defaultAccountNo = systemSetting.defaultAccountNo;
