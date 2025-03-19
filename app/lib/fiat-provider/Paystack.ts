@@ -123,10 +123,10 @@ export default class Paystack implements IPaymentProvider {
       const hash = crypto.createHmac('sha512', this.secretKey)
         .update(JSON.stringify(payload)).digest('hex');
 
-      console.log('payload', JSON.stringify(payload))
-      console.log({ hash })
-      console.log('headers', request.headers())
-      console.log('paystack-signature', headers['x-paystack-signature'])
+      // console.log('payload', JSON.stringify(payload))
+      // console.log({ hash })
+      // console.log('headers', request.headers())
+      // console.log('paystack-signature', headers['x-paystack-signature'])
 
       if (hash !== headers['x-paystack-signature']) {
         throw new Error('paystack signature error')
@@ -148,6 +148,8 @@ export default class Paystack implements IPaymentProvider {
       let txn = await Transaction.query()
         .preload('recieverCurrency', (query) => query.select('name', 'network', 'tokenAddress'))
         .where('fiat_provider_tx_ref', payload?.data?.reference)
+
+        console.log({txn})
 
       if (txn[0].status === transactionStatus.COMPLETED) {
         throw new Error('txn already completed')
