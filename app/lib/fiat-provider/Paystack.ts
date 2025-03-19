@@ -3,6 +3,12 @@ import { iGenerateBankAccount, IPaymentProvider, VerifyPaymentResponse } from ".
 import { Request } from "../../helpers/https"
 import { createTransferRecipient } from "./utils/paystack.utils";
 import crypto from "crypto"
+import { PROCESS_TYPES, supportedChains, transactionStatus, transactionType } from 'App/helpers/types';
+import Transaction from 'App/models/Transaction';
+import TransactionsController from 'App/controllers/http/TransactionsController';
+import SystemWallet from '../system-wallet/SystemWallet';
+import { startIndexerProcess } from 'App/services/indexer/Process';
+import WebSocketsController from 'App/controllers/http/WebSocketsController';
 
 
 
@@ -54,13 +60,16 @@ export default class Paystack implements IPaymentProvider {
         currency: "NGN",
         bank_transfer: {
           account_expires_at: null
-        }
+        },
+        reference: txRef
       }
 
       const response = await Request.post(`${this.baseUrl}/charge`, payload, { headers });
       if (!response.ok) {
         throw new Error('generating paystack bank account failed');
       }
+
+      console.log({ response: response.data.data })
 
       return {
         accountNumber: response.data.data.data.account_number,
@@ -111,18 +120,81 @@ export default class Paystack implements IPaymentProvider {
       const hash = crypto.createHmac('sha512', this.secretKey)
         .update(JSON.stringify(request.body)).digest('hex');
 
-      if (hash == request.headers['x-paystack-signature']) {
-        // Retrieve the request's body
-        const event = request.body;
-        // Do something with event
+      if (hash !== request.headers['x-paystack-signature']) {
+        throw new Error('paystack signature error')
       }
-      response.send(200);
+
+      console.log('verified')
+
+      const payload = request.body();
+
+
+      process.env.PROCESS_TYPE = PROCESS_TYPES.APP;
+
+      // const payload = request.body();
+
+      // check payload status
+      if (payload?.data?.status !== 'success'){
+        throw new Error('status not successfull')
+      }
+
+      // check if txn is already processed
+      let txn = await Transaction.query()
+        .preload('recieverCurrency', (query) => query.select('name', 'network', 'tokenAddress'))
+        .where('fiat_provider_tx_ref', payload?.data?.reference)
+
+      if (txn[0].status === transactionStatus.COMPLETED) {
+        throw new Error('txn already completed')
+      }
+
+      // call provider to verify
+      const response = await this.verifyPayment(payload?.data?.reference);
+
+      let txnType: "userBuy" | "userSell" = txn[0].type === transactionType.BUY_CRYPTO ? "userBuy" : "userSell";
+      let actualAmountUserSends = new TransactionsController()._calcActualAmountUserSends(txn, txnType);
+
+
+      let data = { status: '' }
+      if (
+        response.success
+        && response.data.amount/ 100 >= actualAmountUserSends
+        && response.data.currency === 'NGN') {
+        data.status = transactionStatus.TRANSFER_CONFIRMED;
+      } else {
+        data.status = transactionStatus.FAILED;
+      }
+
+      if (data.status === transactionStatus.TRANSFER_CONFIRMED) {
+
+        await Transaction.query()
+          .where("fiat_provider_tx_ref", payload?.data?.reference)
+          .update(data);
+
+        let recievingCurrencyNetwork = txn[0].recieverCurrency.network as unknown as supportedChains;
+        let actualAmountUserReceives = new TransactionsController()
+          ._calcActualAmountUserRecieves(txn, txnType);
+
+        if (!txn[0].recievingWalletAddress) {
+          throw new Error('recievingWalletAddress does not exist');
+        }
+
+        // Start indexer process
+        startIndexerProcess(txn[0].uniqueId);
+
+        new SystemWallet(recievingCurrencyNetwork)
+          .transferToken(actualAmountUserReceives, txn[0].recieverCurrency.tokenAddress, txn[0].recievingWalletAddress)
+
+      }
+      await new WebSocketsController()
+        .emitStatusUpdateToClient(txn[0].uniqueId)
+
+      response.status(200).send('webhook processed.');
 
 
 
     } catch (error) {
       console.log(error)
-      response.status(401).send('processing webhook failed!');
+      response.status(401).send('processing paystack webhook failed!');
     }
   }
 
@@ -152,7 +224,7 @@ export default class Paystack implements IPaymentProvider {
       if (response.data.data.status === 'success') {
         transactionFound = true;
         success = true;
-        return { ...response.data, success, transactionFound };
+        return { ...response.data.data, success, transactionFound };
       }
 
       return { ...response.data, success, transactionFound: true };
