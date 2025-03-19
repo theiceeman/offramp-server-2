@@ -124,6 +124,7 @@ export default class Paystack implements IPaymentProvider {
 
       console.log('payload', JSON.stringify(payload))
       console.log({ hash })
+      console.log('headers', request.headers)
       console.log('paystack-signature', request.headers['x-paystack-signature'])
       if (hash !== request.headers['x-paystack-signature']) {
         throw new Error('paystack signature error')
