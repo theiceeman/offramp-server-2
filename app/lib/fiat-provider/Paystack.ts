@@ -275,7 +275,7 @@ export default class Paystack implements IPaymentProvider {
 
       // Skip signature verification in test mode if needed
       const skipVerification =
-        this.environment === "dev" && process.env.NODE_ENV !== "prod";
+        this.environment === "dev" && process.env.NODE_ENV !== "production";
 
       if (
         !skipVerification &&
@@ -347,10 +347,6 @@ export default class Paystack implements IPaymentProvider {
         data.status = transactionStatus.FAILED;
       }
 
-      // Store the provider response for reference
-      console.log(
-        `Updating transaction with reference ${reference} to status: ${data.status}`
-      );
       // Store the provider response for reference
       const updateResult = await Transaction.query()
         .where("fiat_provider_tx_ref", reference)

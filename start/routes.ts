@@ -219,7 +219,6 @@ Route.post(
   async (context: HttpContextContract) => {
     try {
       const payload = context.request.body();
-      console.log("Received Webhook Payload:", payload);
 
       const reference =
         payload?.data?.reference ||
@@ -234,7 +233,6 @@ Route.post(
         });
       }
 
-      console.log("Looking for transaction with reference:", reference);
 
       // First, try to find by fiat_provider_tx_ref
       let txn = await Transaction.query()
