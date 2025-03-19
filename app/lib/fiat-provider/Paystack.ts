@@ -17,6 +17,7 @@ interface params {
   amount: number;
   userEmail: string;
   bankCode: string;
+  txRef: string;
 }
 
 const PAYSTACK_PUBLIC_KEY = process.env.PAYSTACK_PUBLIC_KEY;
@@ -27,7 +28,6 @@ const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
  * Library for integration with paystack payment provider.
  */
 export default class Paystack implements IPaymentProvider {
-  private publicKey: string;
   private secretKey: string;
   private baseUrl: string = 'https://api.paystack.co';
 
@@ -36,7 +36,6 @@ export default class Paystack implements IPaymentProvider {
       throw new Error('PAYSTACK_PUBLIC_KEY, PAYSTACK_PUBLIC_KEY not defined in env')
 
     }
-    this.publicKey = PAYSTACK_PUBLIC_KEY;
     this.secretKey = PAYSTACK_SECRET_KEY;
   }
 
@@ -69,8 +68,6 @@ export default class Paystack implements IPaymentProvider {
         throw new Error('generating paystack bank account failed');
       }
 
-      console.log({ response: response.data.data })
-
       return {
         accountNumber: response.data.data.data.account_number,
         bankName: response.data.data.data.bank.name,
@@ -84,8 +81,12 @@ export default class Paystack implements IPaymentProvider {
   }
 
 
-
-  public async initSendBankTransfer({ accountNumber, amount, userEmail, bankCode }: params): Promise<any> {
+/**
+ * This is used to make a transfer to users account.
+ * @param param0
+ * @returns
+ */
+  public async initSendBankTransfer({ accountNumber, amount, userEmail, bankCode, txRef }: params): Promise<any> {
     try {
       const recipientCode = await createTransferRecipient(bankCode, accountNumber, userEmail)
 
@@ -98,7 +99,8 @@ export default class Paystack implements IPaymentProvider {
         source: "balance",
         reason: "bank_transfer",
         amount: amount * 100, // kobo
-        recipient: recipientCode
+        recipient: recipientCode,
+        reference: txRef
       }
 
       const response = await Request.post(`${this.baseUrl}/transfer`, payload, { headers });
@@ -114,30 +116,24 @@ export default class Paystack implements IPaymentProvider {
   }
 
 
+  /**
+   * Process webhook from users payment.
+   * @param param0
+   */
   public async processWebhook({ request, response }: HttpContextContract) {
     try {
       const payload = request.body();
       const headers = request.headers();
 
-      // validate event
+      // ensure request is from paystack
       const hash = crypto.createHmac('sha512', this.secretKey)
         .update(JSON.stringify(payload)).digest('hex');
-
-      // console.log('payload', JSON.stringify(payload))
-      // console.log({ hash })
-      // console.log('headers', request.headers())
-      // console.log('paystack-signature', headers['x-paystack-signature'])
 
       if (hash !== headers['x-paystack-signature']) {
         throw new Error('paystack signature error')
       }
 
-
-
-
       process.env.PROCESS_TYPE = PROCESS_TYPES.APP;
-
-      // const payload = request.body();
 
       // check payload status
       if (payload?.data?.status !== 'success') {
@@ -149,14 +145,12 @@ export default class Paystack implements IPaymentProvider {
         .preload('recieverCurrency', (query) => query.select('name', 'network', 'tokenAddress'))
         .where('fiat_provider_tx_ref', payload?.data?.reference)
 
-        console.log({txn})
-
       if (txn[0].status === transactionStatus.COMPLETED) {
         throw new Error('txn already completed')
       }
 
       // call provider to verify
-      const response = await this.verifyPayment(payload?.data?.reference);
+      const paystackRes = await this.verifyPayment(payload?.data?.reference);
 
       let txnType: "userBuy" | "userSell" = txn[0].type === transactionType.BUY_CRYPTO ? "userBuy" : "userSell";
       let actualAmountUserSends = new TransactionsController()._calcActualAmountUserSends(txn, txnType);
@@ -164,9 +158,9 @@ export default class Paystack implements IPaymentProvider {
 
       let data = { status: '' }
       if (
-        response.success
-        && response.data.amount / 100 >= actualAmountUserSends
-        && response.data.currency === 'NGN') {
+        paystackRes.success
+        && paystackRes.data.amount / 100 >= actualAmountUserSends
+        && paystackRes.data.currency === 'NGN') {
         data.status = transactionStatus.TRANSFER_CONFIRMED;
       } else {
         data.status = transactionStatus.FAILED;
@@ -198,8 +192,6 @@ export default class Paystack implements IPaymentProvider {
 
       response.status(200).send('webhook processed.');
 
-
-
     } catch (error) {
       console.log(error)
       response.status(401).send('processing paystack webhook failed!');
@@ -208,7 +200,8 @@ export default class Paystack implements IPaymentProvider {
 
 
   /**
-   * This queries current status of a transaction from the payment provider.
+   * This queries current status of a user's payment from paystack.
+   * https://paystack.com/docs/payments/
    * @param reference
    * @returns
    */
@@ -226,16 +219,19 @@ export default class Paystack implements IPaymentProvider {
         { headers },
       );
       if (response.data.data.message.includes("reference not found")) {
-        return { ...response.data, success, transactionFound };
-      }
-
-      if (response.data.data.status === 'success') {
-        transactionFound = true;
-        success = true;
         return { ...response.data.data, success, transactionFound };
       }
 
-      return { ...response.data, success, transactionFound: true };
+      // console.log('xxxx', response.data.data.data.status)
+      if (response.data.data.data.status === 'success') {
+        transactionFound = true;
+        success = true;
+        return { ...response.data.data, success, transactionFound };
+
+      } else {
+        return { ...response.data.data, success, transactionFound: true };
+      }
+
     } catch (error) {
       console.error(error)
       throw new Error(error)
