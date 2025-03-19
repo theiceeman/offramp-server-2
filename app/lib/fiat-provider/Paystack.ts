@@ -122,11 +122,13 @@ export default class Paystack implements IPaymentProvider {
       const hash = crypto.createHmac('sha512', this.secretKey)
         .update(JSON.stringify(payload)).digest('hex');
 
+      console.log('payload', JSON.stringify(payload))
+      console.log({ hash })
+      console.log('paystack-signature', request.headers['x-paystack-signature'])
       if (hash !== request.headers['x-paystack-signature']) {
         throw new Error('paystack signature error')
       }
 
-      console.log('verified')
 
 
 
@@ -135,7 +137,7 @@ export default class Paystack implements IPaymentProvider {
       // const payload = request.body();
 
       // check payload status
-      if (payload?.data?.status !== 'success'){
+      if (payload?.data?.status !== 'success') {
         throw new Error('status not successfull')
       }
 
@@ -158,7 +160,7 @@ export default class Paystack implements IPaymentProvider {
       let data = { status: '' }
       if (
         response.success
-        && response.data.amount/ 100 >= actualAmountUserSends
+        && response.data.amount / 100 >= actualAmountUserSends
         && response.data.currency === 'NGN') {
         data.status = transactionStatus.TRANSFER_CONFIRMED;
       } else {
