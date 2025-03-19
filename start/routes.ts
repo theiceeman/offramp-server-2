@@ -8,14 +8,14 @@ import Transaction from "App/models/Transaction";
 
 Route.get("/", async () => {
   try {
-    let flutterwave = new Flutterwave("prod");
+    let paystack = new Paystack("dev");
     let params = {
-      accountBank: "some_bank",
-      accountNumber: "some_account_number",
+      accountBank: "999992",
+      accountNumber: "8138888612",
       amount: 10,
-      txRef: "some_tx_ref",
+      txRef: "44c9df86-ef5d-45d5-bf5a-501a70661e52",
     };
-    let result = await flutterwave.initSendBankTransfer(params);
+    let result = await paystack.initSendBankTransfer(params);
     console.log({ result });
   } catch (error) {
     console.error({ error });
@@ -233,7 +233,6 @@ Route.post(
         });
       }
 
-
       // First, try to find by fiat_provider_tx_ref
       let txn = await Transaction.query()
         .where("fiat_provider_tx_ref", reference)
@@ -291,7 +290,7 @@ Route.post(
       // Ensure the response is always JSON
       return context.response.status(200).json({
         success: true,
-        message:"Webhook processed successfully",
+        message: "Webhook processed successfully",
       });
     } catch (error) {
       console.error("Error processing webhook:", error);

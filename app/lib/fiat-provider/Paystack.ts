@@ -223,6 +223,9 @@ export default class Paystack implements IPaymentProvider {
         reason: "WT Payment",
         currency: "NGN",
         reference: txRef,
+        authorization: {
+          otp: false, // Disable OTP
+        },
       };
 
       const response = await this.sdk.transfer.initiate(transferDetails);

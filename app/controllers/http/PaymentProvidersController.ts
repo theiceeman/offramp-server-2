@@ -79,6 +79,8 @@ export default class PaymentProvidersController {
         let result = await new OffRampWallet(supportedChains[sendingCurrency[0].network])
           .factoryDeployAddress(String(Date.now()));
 
+          console.log(result)
+
 
         await UserWallet.create({
           userId: userUniqueId,
