@@ -117,6 +117,7 @@ export default class Paystack implements IPaymentProvider {
   public async processWebhook({ request, response }: HttpContextContract) {
     try {
       const payload = request.body();
+      const headers = request.headers();
 
       // validate event
       const hash = crypto.createHmac('sha512', this.secretKey)
@@ -125,8 +126,9 @@ export default class Paystack implements IPaymentProvider {
       console.log('payload', JSON.stringify(payload))
       console.log({ hash })
       console.log('headers', request.headers())
-      console.log('paystack-signature', request.headers['x-paystack-signature'])
-      if (hash !== request.headers['x-paystack-signature']) {
+      console.log('paystack-signature', headers['x-paystack-signature'])
+
+      if (hash !== headers['x-paystack-signature']) {
         throw new Error('paystack signature error')
       }
 
