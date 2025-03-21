@@ -23,7 +23,7 @@ export default class extends BaseSchema {
       table.string('processed_by', 255).nullable()
       table.string('settled_by', 255).nullable().references('unique_id').inTable('admins')
       table.string('settled_at', 255).nullable()
-      table.string('fiat_provider_tx_ref', 255).nullable()
+      table.string('fiat_provider_tx_ref', 255).notNullable()
       table.text('fiat_provider_result').nullable()
       table.boolean('is_deleted').notNullable().defaultTo(false)
 

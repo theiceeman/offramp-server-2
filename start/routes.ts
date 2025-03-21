@@ -7,21 +7,21 @@ import Currency from 'App/models/Currency';
 import Transaction from 'App/models/Transaction';
 
 
-Route.get('/', async () => {
-  try {
-    let flutterwave = new Flutterwave('prod');
-    let params = {
-      accountBank: 'some_bank',
-      accountNumber: 'some_account_number',
-      amount: 10,
-      txRef: 'some_tx_ref'
-    };
-    let result = await flutterwave.initSendBankTransfer(params);
-    console.log({ result })
-  } catch (error) {
-    console.error({ error })
-  }
-});
+// Route.get('/', async () => {
+//   try {
+//     let flutterwave = new Flutterwave('prod');
+//     let params = {
+//       accountBank: 'some_bank',
+//       accountNumber: 'some_account_number',
+//       amount: 10,
+//       txRef: 'some_tx_ref'
+//     };
+//     let result = await flutterwave.initSendBankTransfer(params);
+//     console.log({ result })
+//   } catch (error) {
+//     console.error({ error })
+//   }
+// });
 
 Route.get('/app/global-configuration', 'AppConfigurationsController.admin').middleware('auth:admin')
 Route.get('/app/user/global-configuration', 'AppConfigurationsController.user')

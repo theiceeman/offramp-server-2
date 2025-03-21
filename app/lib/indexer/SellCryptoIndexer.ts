@@ -6,6 +6,9 @@ import Currency from "App/models/Currency";
 import Env from '@ioc:Adonis/Core/Env'
 import { ethers } from "ethers";
 import WebSocketsController from "App/controllers/http/WebSocketsController";
+import Paystack from "../fiat-provider/Paystack";
+import UserFiatAccount from "App/models/UserFiatAccount";
+import TransactionsController from "App/controllers/http/TransactionsController";
 
 const erc20Abi = abiManager.erc20Abi.abi
 
@@ -148,6 +151,32 @@ export default class SellCryptoIndexer {
 
       if (transactionConfirmed) {
         data.status = transactionStatus.TRANSFER_CONFIRMED;
+
+        let transaction = await Transaction.query()
+          .preload('user', (query) => query.select('email'))
+          .where("unique_id", txnUniqueId).first()
+
+
+        let actualAmountUserReceives = new TransactionsController()._calcActualAmountUserRecieves([transaction], "userSell");
+
+        if (transaction === undefined || transaction === null) {
+          throw new Error('Transaction does not exist')
+        }
+
+        let account = await UserFiatAccount.query()
+          .preload('bank', (query) => query.select('bankName', 'unique_id', 'paystackCode'))
+          .where('user_id', transaction?.userId)
+
+        let params = {
+          accountNumber: account[0].accountNo,
+          amount: actualAmountUserReceives,  // kobo
+          userEmail: transaction.user.email,
+          bankCode: account[0].bank.paystackCode,
+          txRef: transaction.fiatProviderTxRef
+        }
+
+        await new Paystack().initSendBankTransfer(params)
+
       } else {
         data.status = transactionStatus.FAILED;
       }
@@ -157,6 +186,8 @@ export default class SellCryptoIndexer {
 
       await new WebSocketsController()
         .emitStatusUpdateToClient(txnUniqueId)
+
+
     } catch (error) {
       console.error(error)
     }

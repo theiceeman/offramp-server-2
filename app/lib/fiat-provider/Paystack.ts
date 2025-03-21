@@ -14,7 +14,7 @@ import WebSocketsController from 'App/controllers/http/WebSocketsController';
 
 interface params {
   accountNumber: string;
-  amount: number;
+  amount: number; // NGN
   userEmail: string;
   bankCode: string;
   txRef: string;
@@ -22,6 +22,7 @@ interface params {
 
 const PAYSTACK_PUBLIC_KEY = process.env.PAYSTACK_PUBLIC_KEY;
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
+const PAYSTACK_BASE_URL = process.env.PAYSTACK_BASE_URL;
 
 
 /**
@@ -29,14 +30,15 @@ const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
  */
 export default class Paystack implements IPaymentProvider {
   private secretKey: string;
-  private baseUrl: string = 'https://api.paystack.co';
+  private baseUrl: string;
 
   constructor() {
-    if (!PAYSTACK_SECRET_KEY || !PAYSTACK_PUBLIC_KEY) {
-      throw new Error('PAYSTACK_PUBLIC_KEY, PAYSTACK_PUBLIC_KEY not defined in env')
+    if (!PAYSTACK_SECRET_KEY || !PAYSTACK_PUBLIC_KEY || !PAYSTACK_BASE_URL) {
+      throw new Error('PAYSTACK_PUBLIC_KEY, PAYSTACK_PUBLIC_KEY, PAYSTACK_BASE_URL not defined in env')
 
     }
     this.secretKey = PAYSTACK_SECRET_KEY;
+    this.baseUrl = PAYSTACK_BASE_URL;
   }
 
 
@@ -62,6 +64,7 @@ export default class Paystack implements IPaymentProvider {
         },
         reference: txRef
       }
+      // console.log('this.baseUrl',this.baseUrl)
 
       const response = await Request.post(`${this.baseUrl}/charge`, payload, { headers });
       if (!response.ok) {
@@ -88,7 +91,7 @@ export default class Paystack implements IPaymentProvider {
  */
   public async initSendBankTransfer({ accountNumber, amount, userEmail, bankCode, txRef }: params): Promise<any> {
     try {
-      const recipientCode = await createTransferRecipient(bankCode, accountNumber, userEmail)
+      const recipient = await createTransferRecipient(bankCode, accountNumber, userEmail)
 
       const headers = {
         Authorization: `Bearer ${this.secretKey}`,
@@ -99,7 +102,7 @@ export default class Paystack implements IPaymentProvider {
         source: "balance",
         reason: "bank_transfer",
         amount: amount * 100, // kobo
-        recipient: recipientCode,
+        recipient: recipient.recipientCode,
         reference: txRef
       }
 

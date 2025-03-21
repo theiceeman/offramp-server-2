@@ -9,6 +9,7 @@ import Currency from "App/models/Currency";
 import Setting from "App/models/Setting";
 import User from "App/models/User";
 import UserWallet from "App/models/UserWallet";
+import { ethers } from "ethers";
 
 export default class PaymentProvidersController {
 
@@ -71,7 +72,7 @@ export default class PaymentProvidersController {
         await UserWallet.create({
           userId: userUniqueId,
           network: sendingCurrency[0].network,
-          walletAddress: result.data[1].value,
+          walletAddress: ethers.utils.getAddress((result.data[1].value).toLowerCase()),
         })
 
         txnWalletAddress = result.data[1].value;

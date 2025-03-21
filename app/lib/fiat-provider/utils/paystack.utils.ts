@@ -23,12 +23,12 @@ export async function createTransferRecipient(bankCode, accountNumber, userEmail
       currency: "NGN"
     }
 
-    const response = await Request.post(`${this.baseUrl}/charge`, payload, {headers});
+    const response = await Request.post(`${process.env.PAYSTACK_BASE_URL}/transferrecipient`, payload, {headers});
     if (!response.ok) {
       throw new Error('creating transfer recipient failed');
     }
 
-    return { recipientCode: response.data.data.recipient_code };
+    return { recipientCode: response.data.data.data.recipient_code };
   } catch (error) {
     throw new Error(`Failed to create transfer recipient: ${error.message}`);
   }
