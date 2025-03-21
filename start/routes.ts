@@ -142,8 +142,8 @@ Route.group(() => {
 
 Route.post('/process-web-hook', async (context: HttpContextContract) => {
   try {
-    // const payload = context.request.body();
-    // console.log('fwv payload', payload);
+    const payload = context.request.body();
+    console.log('fwv payload', payload);
 
     context.response.status(200).send("webhook received");
     new Paystack().processWebhook(context)
