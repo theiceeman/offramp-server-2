@@ -10,7 +10,8 @@ export default class extends BaseSchema {
       table.string('user_id', 255).notNullable()
       table.string('account_name', 255).notNullable()
       table.string('account_no', 255).notNullable()
-      table.string('bank_name', 255).notNullable()
+      table.string('bank_id').references('unique_id').inTable('banks')
+
       table.boolean('is_deleted').notNullable().defaultTo(false)
 
       /**

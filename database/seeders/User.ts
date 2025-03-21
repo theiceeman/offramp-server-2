@@ -3,11 +3,14 @@ import User from 'App/models/User'
 
 export default class extends BaseSeeder {
   public async run() {
+    let users = await User.query()
+    if (users.length > 0) return;
+
     await User.create(
       {
-        "email":"tester1@gmail.com",
-        "password":"123456789"
-    }
+        "email": "tester1@gmail.com",
+        "password": "123456789"
+      }
     )
   }
 }

@@ -14,6 +14,9 @@ export default class BankSeeder extends BaseSeeder {
         throw new Error('PAYSTACK_SECRET_KEY environment variable is not defined')
       }
 
+      let users = await Bank.query()
+      if (users.length > 0) return;
+
       // Fetch banks from Paystack API
       const response = await axios.get('https://api.paystack.co/bank', {
         headers: {
@@ -28,8 +31,6 @@ export default class BankSeeder extends BaseSeeder {
       }
 
       const banks = response.data.data
-
-      // Create an array of bank objects to insert
       const bankData = banks.map((bank) => ({
         unique_id: uuid(),
         bank_name: bank.name,
@@ -37,8 +38,9 @@ export default class BankSeeder extends BaseSeeder {
       }))
 
       // Insert banks in batches to avoid potential issues with large datasets
-      const batchSize = 100
+      const batchSize = bankData.length
       for (let i = 0; i < bankData.length; i += batchSize) {
+
         const batch = bankData.slice(i, i + batchSize)
         await Bank.createMany(batch)
       }

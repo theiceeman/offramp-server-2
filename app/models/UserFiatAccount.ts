@@ -1,6 +1,7 @@
 import { DateTime } from 'luxon'
-import { BaseModel, column } from '@ioc:Adonis/Lucid/Orm'
+import { BaseModel, column, HasOne, hasOne } from '@ioc:Adonis/Lucid/Orm'
 import { genRandomUuid } from 'App/helpers/utils'
+import Bank from './Bank'
 
 export default class UserFiatAccount extends BaseModel {
   @column({ isPrimary: true })
@@ -19,7 +20,7 @@ export default class UserFiatAccount extends BaseModel {
   public accountNo: string
 
   @column()
-  public bankName: string
+  public bankId: string
 
   @column()
   public isDeleted: string
@@ -29,4 +30,11 @@ export default class UserFiatAccount extends BaseModel {
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   public updatedAt: DateTime
+
+
+  @hasOne(() => Bank, {
+    localKey: 'bankId',
+    foreignKey: 'uniqueId',
+  })
+  public bank: HasOne<typeof Bank>
 }

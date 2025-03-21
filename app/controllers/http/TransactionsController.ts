@@ -2,7 +2,7 @@ import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import { schema } from '@ioc:Adonis/Core/Validator'
 import Currency from 'App/models/Currency';
 import Transaction from 'App/models/Transaction';
-import { formatErrorMessage, formatSuccessMessage } from 'App/helpers/utils';
+import { formatErrorMessage, formatSuccessMessage, genRandomUuid } from 'App/helpers/utils';
 import SellCryptoIndexer from 'App/lib/indexer/SellCryptoIndexer';
 import { transactionStatus, transactionType } from 'App/helpers/types';
 import { DateTime } from 'luxon';
@@ -55,7 +55,8 @@ export default class TransactionsController extends RolesController {
         sendingCurrencyUsdRate: transaction[0].sendingCurrencyUsdRate,
         recievingCurrencyUsdRate: transaction[0].recievingCurrencyUsdRate,
         fee: transaction[0].fee,   // fee in USD
-        walletAddress: txnWalletAddress
+        walletAddress: txnWalletAddress,
+        fiatProviderTxRef: genRandomUuid()
       });
 
       if (result !== null) {

@@ -7,21 +7,21 @@ import Currency from 'App/models/Currency';
 import Transaction from 'App/models/Transaction';
 
 
-Route.get('/', async () => {
-  try {
-    let flutterwave = new Flutterwave('prod');
-    let params = {
-      accountBank: 'some_bank',
-      accountNumber: 'some_account_number',
-      amount: 10,
-      txRef: 'some_tx_ref'
-    };
-    let result = await flutterwave.initSendBankTransfer(params);
-    console.log({ result })
-  } catch (error) {
-    console.error({ error })
-  }
-});
+// Route.get('/', async () => {
+//   try {
+//     let flutterwave = new Flutterwave('prod');
+//     let params = {
+//       accountBank: 'some_bank',
+//       accountNumber: 'some_account_number',
+//       amount: 10,
+//       txRef: 'some_tx_ref'
+//     };
+//     let result = await flutterwave.initSendBankTransfer(params);
+//     console.log({ result })
+//   } catch (error) {
+//     console.error({ error })
+//   }
+// });
 
 Route.get('/app/global-configuration', 'AppConfigurationsController.admin').middleware('auth:admin')
 Route.get('/app/user/global-configuration', 'AppConfigurationsController.user')
@@ -142,53 +142,13 @@ Route.group(() => {
 
 Route.post('/process-web-hook', async (context: HttpContextContract) => {
   try {
-    const payload = context.request.body();
-    console.log('fwv payload', payload);
-    // return;
-
-    // let txn = await Transaction.query().where('fiat_provider_tx_ref', payload?.data?.reference)
-
-    // const recievingCurrency = await Currency.query().where('unique_id', txn[0].recieverCurrencyId)
-
-    // let isTestTransaction = isTestNetwork(recievingCurrency[0].network)
-    // const message = await new Flutterwave(isTestTransaction ? 'dev' : 'prod')
-    //   .processWebhook(context);
+    // const payload = context.request.body();
+    // console.log('fwv payload', payload);
 
     context.response.status(200).send("webhook received");
-
-
     new Paystack().processWebhook(context)
-
 
   } catch (error) {
     console.error({ error })
   }
 });
-
-/*
-{
-  event: 'bank.transfer.rejected',
-  data: {
-    bank_transfer: {
-      amount: '170000',
-      message: 'incorrect amount sent',
-      message_type: 'INCORRECT_AMOUNT',
-      transaction_id: '4790418876'
-    },
-    customer: {
-      first_name: null,
-      last_name: null,
-      email: 'okorieebube1@gmail.com',
-      phone: null,
-      metadata: null,
-      domain: 'test',
-      customer_code: 'CUS_k7h3nw99l7gxqc9',
-      risk_action: 'default',
-      id: 253072482,
-      integration: 1368941,
-      createdAt: '2025-03-18T20:18:31.000Z',
-      updatedAt: '2025-03-18T20:18:31.000Z'
-    }
-  }
-}
- */

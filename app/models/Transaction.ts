@@ -64,7 +64,7 @@ export default class Transaction extends BaseModel {
   public settledAt: string | null
 
   @column()
-  public fiatProviderTxRef: string | null
+  public fiatProviderTxRef: string
 
   @column()
   public fiatProviderResult: string
