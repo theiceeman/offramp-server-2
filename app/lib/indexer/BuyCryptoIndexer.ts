@@ -9,6 +9,7 @@ import WebSocketsController from "App/controllers/http/WebSocketsController";
 import TransactionsController from "App/controllers/http/TransactionsController";
 
 const erc20Abi = abiManager.erc20Abi.abi;
+const MAX_CONFIRMATION = 10;
 
 export default class BuyCryptoIndexer {
   private provider;
@@ -129,7 +130,7 @@ export default class BuyCryptoIndexer {
       console.info(`Checking confirmations for ${txHash} (attempt ${attempt + 1}/${maxAttempts})`);
 
       const txReceipt = await this.provider.getTransaction(txHash);
-      if (txReceipt?.confirmations >= 15) {
+      if (txReceipt?.confirmations >= MAX_CONFIRMATION) {
         return true;
       }
 

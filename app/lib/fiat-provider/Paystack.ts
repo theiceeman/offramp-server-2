@@ -84,11 +84,11 @@ export default class Paystack implements IPaymentProvider {
   }
 
 
-/**
- * This is used to make a transfer to users account.
- * @param param0
- * @returns
- */
+  /**
+   * This is used to make a transfer to users account.
+   * @param param0
+   * @returns
+   */
   public async initSendBankTransfer({ accountNumber, amount, userEmail, bankCode, txRef }: params): Promise<any> {
     try {
       const recipient = await createTransferRecipient(bankCode, accountNumber, userEmail)
@@ -101,7 +101,7 @@ export default class Paystack implements IPaymentProvider {
       const payload = {
         source: "balance",
         reason: "bank_transfer",
-        amount: amount * 100, // kobo
+        amount: Math.round(parseFloat(String(amount)) * 100), // kobo
         recipient: recipient.recipientCode,
         reference: txRef
       }
@@ -112,6 +112,47 @@ export default class Paystack implements IPaymentProvider {
       }
 
       return response;
+    } catch (error) {
+      console.error(error)
+      throw new Error(error)
+    }
+  }
+
+
+
+  /**
+   * This queries current status of a user's payment from paystack.
+   * This is used for verifying normal payments not for transfers.
+   * https://paystack.com/docs/payments/
+   * @param reference
+   * @returns
+   */
+  async verifyPayment(reference: string): Promise<VerifyPaymentResponse> {
+    try {
+      let success = false;
+      let transactionFound = false;
+
+      const headers = {
+        Authorization: `Bearer ${this.secretKey}`,
+        'Content-Type': 'application/json'
+      };
+
+      const response = await Request.get(`${this.baseUrl}/transaction/verify/${reference}`,
+        { headers },
+      );
+      if (response.data.data.message.includes("reference not found")) {
+        return { ...response.data.data, success, transactionFound };
+      }
+
+      if (response.data.data.data.status === 'success') {
+        transactionFound = true;
+        success = true;
+        return { ...response.data.data, success, transactionFound };
+
+      } else {
+        return { ...response.data.data, success, transactionFound: true };
+      }
+
     } catch (error) {
       console.error(error)
       throw new Error(error)
@@ -152,18 +193,31 @@ export default class Paystack implements IPaymentProvider {
         throw new Error('txn already completed')
       }
 
+      if (txn[0].type === transactionType.BUY_CRYPTO) {
+        await this._processWebhookForBuyTransaction(txn, payload);
+      } else if (txn[0].type === transactionType.CRYPTO_OFFRAMP) {
+        await this._processWebhookForSellTransaction(txn, payload);
+      }
+
+      response.status(200).send('webhook processed.');
+
+    } catch (error) {
+      console.log(error)
+      response.status(401).send('processing paystack webhook failed!');
+    }
+  }
+
+
+  private async _processWebhookForBuyTransaction(txn: Transaction[], payload) {
+    try {
       // call provider to verify
       const paystackRes = await this.verifyPayment(payload?.data?.reference);
 
       let txnType: "userBuy" | "userSell" = txn[0].type === transactionType.BUY_CRYPTO ? "userBuy" : "userSell";
       let actualAmountUserSends = new TransactionsController()._calcActualAmountUserSends(txn, txnType);
 
-
       let data = { status: '' }
-      if (
-        paystackRes.success
-        && paystackRes.data.amount / 100 >= actualAmountUserSends
-        && paystackRes.data.currency === 'NGN') {
+      if (paystackRes.success && paystackRes.data.amount / 100 >= actualAmountUserSends && paystackRes.data.currency === 'NGN') {
         data.status = transactionStatus.TRANSFER_CONFIRMED;
       } else {
         data.status = transactionStatus.FAILED;
@@ -190,55 +244,83 @@ export default class Paystack implements IPaymentProvider {
           .transferToken(actualAmountUserReceives, txn[0].recieverCurrency.tokenAddress, txn[0].recievingWalletAddress)
 
       }
-      await new WebSocketsController()
-        .emitStatusUpdateToClient(txn[0].uniqueId)
-
-      response.status(200).send('webhook processed.');
+      await new WebSocketsController().emitStatusUpdateToClient(txn[0].uniqueId)
 
     } catch (error) {
-      console.log(error)
-      response.status(401).send('processing paystack webhook failed!');
+      console.error(error);
+      throw new Error('Failed to process webhook for buy transaction');
     }
   }
 
 
-  /**
-   * This queries current status of a user's payment from paystack.
-   * https://paystack.com/docs/payments/
-   * @param reference
-   * @returns
-   */
-  async verifyPayment(reference: string): Promise<VerifyPaymentResponse> {
+  private async _processWebhookForSellTransaction(txn: Transaction[], payload) {
     try {
-      let success = false;
-      let transactionFound = false;
 
-      const headers = {
-        Authorization: `Bearer ${this.secretKey}`,
-        'Content-Type': 'application/json'
-      };
+      let data = { status: '' }
 
-      const response = await Request.get(`${this.baseUrl}/transaction/verify/${reference}`,
-        { headers },
-      );
-      if (response.data.data.message.includes("reference not found")) {
-        return { ...response.data.data, success, transactionFound };
-      }
-
-      // console.log('xxxx', response.data.data.data.status)
-      if (response.data.data.data.status === 'success') {
-        transactionFound = true;
-        success = true;
-        return { ...response.data.data, success, transactionFound };
-
+      if (payload.event === "transfer.success") {
+        data.status = transactionStatus.COMPLETED;
       } else {
-        return { ...response.data.data, success, transactionFound: true };
+        data.status = transactionStatus.FAILED;
       }
+
+      await Transaction.query()
+        .where("fiat_provider_tx_ref", payload?.data?.reference)
+        .update(data);
+
+      await new WebSocketsController().emitStatusUpdateToClient(txn[0].uniqueId)
 
     } catch (error) {
-      console.error(error)
-      throw new Error(error)
+      console.error(error);
+      throw new Error('Failed to process webhook for buy transaction');
     }
   }
+
+
 
 }
+
+
+// {
+//   "event": "charge.success",
+//   "data": {
+//     "id": 4792858123,
+//     "domain": "test",
+//     "status": "success",
+//     "reference": "d46b0dcc-b4d8-473e-907f-c603115d8298",
+//     "amount": 187502,
+//     "message": null,
+//     "gateway_response": "Approved",
+//     "paid_at": "2025-03-19T16:22:17.000Z",
+//     "created_at": "2025-03-19T16:21:32.000Z",
+//     "channel": "bank_transfer",
+//     "currency": "NGN"
+//   }
+// }
+
+
+// {
+//   "event": "transfer.success",
+//   "data": {
+//     "amount": 30000,
+//     "currency": "NGN",
+//     "domain": "test",
+//     "failures": null,
+//     "id": 37272792,
+//     "integration": {
+//       "id": 463433,
+//       "is_live": true,
+//       "business_name": "Boom Boom Industries NG"
+//     },
+//     "reason": "Have fun...",
+//     "reference": "1jhbs3ozmen0k7y5efmw",
+//     "source": "balance",
+//     "source_details": null,
+//     "status": "success",
+//     "titan_code": null,
+//     "transfer_code": "TRF_wpl1dem4967avzm",
+//     "transferred_at": null,
+//     "created_at": "2020-10-26T12:28:57.000Z",
+//     "updated_at": "2020-10-26T12:28:57.000Z"
+//   }
+// }
