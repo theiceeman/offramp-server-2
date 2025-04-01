@@ -216,6 +216,9 @@ export default class Paystack implements IPaymentProvider {
       let txnType: "userBuy" | "userSell" = txn[0].type === transactionType.BUY_CRYPTO ? "userBuy" : "userSell";
       let actualAmountUserSends = new TransactionsController()._calcActualAmountUserSends(txn, txnType);
 
+      console.log('paystackRes', paystackRes)
+      console.log('actualAmountUserSends', actualAmountUserSends)
+
       let data = { status: '' }
       if (paystackRes.success && paystackRes.data.amount / 100 >= actualAmountUserSends && paystackRes.data.currency === 'NGN') {
         data.status = transactionStatus.TRANSFER_CONFIRMED;
