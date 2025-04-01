@@ -11,16 +11,11 @@ global.io.on('connection', (socket: Socket) => {
   console.error('ws client connected.')
   let connections: Array<string> = []
 
-  socket.on('register_connection', async ({ txnId }: { txnId: string }) => {
-    if (connections.length > 0) return;
-
+  socket.on('register_connection', async (txnId) => {
     await new WebSocketsController()
       .registerNewConnection(txnId, txnId)
 
     socket.join(txnId)
-    connections.push(txnId)
-    console.error({ connections })
-
     console.info('connection registered', txnId)
   })
 
