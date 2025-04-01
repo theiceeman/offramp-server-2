@@ -155,6 +155,10 @@ export default class SellCryptoIndexer {
         .where("unique_id", txnUniqueId)
         .update(data);
 
+
+      await new WebSocketsController()
+      .emitStatusUpdateToClient(txnUniqueId);
+
       if (transactionConfirmed) {
         // Handle the additional steps for a successful sell transaction
         const transaction = await Transaction.query()
@@ -184,8 +188,6 @@ export default class SellCryptoIndexer {
         await new Paystack().initSendBankTransfer(params);
       }
 
-      await new WebSocketsController()
-        .emitStatusUpdateToClient(txnUniqueId);
     } catch (error) {
       console.error('Error updating transaction status:', error);
     }
