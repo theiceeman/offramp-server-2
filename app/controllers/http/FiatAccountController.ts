@@ -4,6 +4,7 @@ import UserFiatAccount from 'App/models/UserFiatAccount';
 import RolesController from './RolesController';
 import { formatErrorMessage } from 'App/helpers/utils';
 import Bank from 'App/models/Bank';
+import { createTransferRecipient } from 'App/lib/fiat-provider/utils/paystack.utils';
 
 
 export default class FiatAccountController extends RolesController {
@@ -30,6 +31,12 @@ export default class FiatAccountController extends RolesController {
       let bankExists = await Bank.query().where('unique_id', data.bankId)
       if (bankExists.length < 1) {
         throw new Error('Bank Id does not exist')
+      }
+
+      // ensure its valid account details
+      const recipient = await createTransferRecipient(bankExists[0].paystackCode, data.accountNo, uniqueId)
+      if (!recipient.recipientCode) {
+        throw new Error('Invalid bank account')
       }
 
       let accountExists = await UserFiatAccount.query()
