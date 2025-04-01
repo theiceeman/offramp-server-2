@@ -125,7 +125,7 @@ export default class SellCryptoIndexer {
   }
 
   private waitForConfirmations = async (txHash: string): Promise<boolean> => {
-    const maxAttempts = 15;
+    const maxAttempts = 8;
     const pollInterval = 10000; // 10 secs
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {

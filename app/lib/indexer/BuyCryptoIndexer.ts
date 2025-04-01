@@ -9,7 +9,7 @@ import WebSocketsController from "App/controllers/http/WebSocketsController";
 import TransactionsController from "App/controllers/http/TransactionsController";
 
 const erc20Abi = abiManager.erc20Abi.abi;
-const MAX_CONFIRMATION = 10;
+const MAX_CONFIRMATION = 2;
 
 export default class BuyCryptoIndexer {
   private provider;
@@ -123,13 +123,13 @@ export default class BuyCryptoIndexer {
   }
 
   private waitForConfirmations = async (txHash: string): Promise<boolean> => {
-    const maxAttempts = 15;
+    const maxAttempts = 20;
     const pollInterval = 10000; // 10 secs
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      console.info(`Checking confirmations for ${txHash} (attempt ${attempt + 1}/${maxAttempts})`);
-
       const txReceipt = await this.provider.getTransaction(txHash);
+      console.info(`Checking confirmations for ${txHash} (attempt ${attempt + 1}/${maxAttempts}) - confimations=${txReceipt.confimations}`);
+
       if (txReceipt?.confirmations >= MAX_CONFIRMATION) {
         return true;
       }
@@ -147,7 +147,7 @@ export default class BuyCryptoIndexer {
         status: transactionConfirmed ? transactionStatus.COMPLETED : transactionStatus.FAILED
       };
 
-       await Transaction.query()
+      await Transaction.query()
         .where("unique_id", txnUniqueId)
         .update(data);
       // console.log('handling...', txnUniqueId, vv); return;
