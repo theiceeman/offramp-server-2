@@ -39,6 +39,7 @@ export default class IndexerProvider {
     const Database = this.app.container.resolveBinding('Adonis/Lucid/Database')
 
     try {
+
       // Check if the transactions table exists before querying
       const tableExists = await Database.rawQuery(`
         SELECT EXISTS (
@@ -52,9 +53,8 @@ export default class IndexerProvider {
         console.log('Transactions table does not exist yet, skipping indexer initialization')
         return
       }
-
-      const Transaction = (await require('App/Models/Transaction')).default;
-      const SellCryptoIndexer = (await require('App/Lib/indexer/SellCryptoIndexer')).default;
+      const Transaction = (await require('App/models/Transaction')).default;
+      const SellCryptoIndexer = (await require('App/lib/indexer/SellCryptoIndexer')).default;
 
       let transactions = await Transaction.query()
         .where('status', transactionStatus.TRANSACTION_CREATED)
