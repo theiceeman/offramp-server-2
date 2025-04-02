@@ -28,9 +28,9 @@ export default class TransactionsController extends RolesController {
         = await new TransactionsValidator().validateSellTransaction(request)
 
       // check for minimum & max amt for transactions
-      let setting = await Setting.firstOrFail()
-      if (amountInUsd < setting.minTransactionAmount || amountInUsd > setting.maxTransactionAmount)
-        throw new Error(`Transaction limit is between ${setting.minTransactionAmount.toLocaleString()} and ${setting.maxTransactionAmount.toLocaleString()} USD.`)
+      // let setting = await Setting.firstOrFail()
+      // if (amountInUsd < setting.minTransactionAmount || amountInUsd > setting.maxTransactionAmount)
+      //   throw new Error(`Transaction limit is between ${setting.minTransactionAmount.toLocaleString()} and ${setting.maxTransactionAmount.toLocaleString()} USD.`)
 
       /*
           if kyc setting is on, check if user has completed kyc.
