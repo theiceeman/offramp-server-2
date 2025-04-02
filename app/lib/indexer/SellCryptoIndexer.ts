@@ -12,7 +12,8 @@ import UserFiatAccount from "App/models/UserFiatAccount";
 
 const erc20Abi = abiManager.erc20Abi.abi;
 
-const MAX_CONFIRMATION = 10;
+const MAX_CONFIRMATION = process.env.MAX_CONFIRMATION;
+const MAX_ATTEMPTS = process.env.MAX_ATTEMPTS;
 
 export default class SellCryptoIndexer {
   private provider;
@@ -25,6 +26,11 @@ export default class SellCryptoIndexer {
   private blocksScanned: number = 0;
 
   constructor(txnId: any) {
+    if (!MAX_CONFIRMATION || !MAX_ATTEMPTS) {
+      console.error('MAX_CONFIRMATION or MAX_ATTEMPTS is not set in the environment variables.');
+      throw new Error('MAX_CONFIRMATION or MAX_ATTEMPTS is not set in the environment variables.');
+    }
+
     this.txnUniqueId = txnId;
   }
 
@@ -47,7 +53,7 @@ export default class SellCryptoIndexer {
       this.tokenContract = new ethers.Contract(this.currency[0].tokenAddress, erc20Abi, wallet);
 
       // Set initial block range
-      this.startBlock = await this.provider.getBlockNumber() - 10;
+      this.startBlock = await this.provider.getBlockNumber();
       this.endBlock = this.startBlock + 1200; // Look ahead ~1 hour
 
       const matchingTransfer = await this.monitorFutureBlocks() as Transaction;
@@ -125,14 +131,15 @@ export default class SellCryptoIndexer {
   }
 
   private waitForConfirmations = async (txHash: string): Promise<boolean> => {
-    const maxAttempts = 8;
     const pollInterval = 10000; // 10 secs
 
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      console.info(`Checking confirmations for ${txHash} (attempt ${attempt + 1}/${maxAttempts})`);
-
+    for (let attempt = 0; attempt < Number(MAX_ATTEMPTS); attempt++) {
       const txReceipt = await this.provider.getTransaction(txHash);
-      if (txReceipt?.confirmations >= MAX_CONFIRMATION) {
+      console.log({txReceipt})
+
+      console.info(`Checking confirmations for ${txHash} (attempt ${attempt + 1}/${MAX_ATTEMPTS}) - confimations=${txReceipt?.confimations}`);
+
+      if (txReceipt?.confirmations >= Number(MAX_CONFIRMATION)) {
         return true;
       }
 
