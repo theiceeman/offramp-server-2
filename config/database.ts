@@ -41,7 +41,7 @@ const databaseConfig: DatabaseConfig = {
         user: Env.get('PG_USER'),
         password: Env.get('PG_PASSWORD', ''),
         database: Env.get('PG_DB_NAME'),
-        ssl: { rejectUnauthorized: false }, // aws db requires ssl conn.
+        ssl: Env.get('NODE_ENV') === 'local' ? false : { rejectUnauthorized: false }, // aws db requires ssl conn.
       },
       migrations: {
         naturalSort: true,
