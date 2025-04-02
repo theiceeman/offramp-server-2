@@ -134,9 +134,9 @@ export default class BuyCryptoIndexer {
 
     for (let attempt = 0; attempt < Number(MAX_ATTEMPTS); attempt++) {
       const txReceipt = await this.provider.getTransaction(txHash);
-      console.log({txReceipt})
+      console.log({ txReceipt: txReceipt.hash })
 
-      console.info(`Checking confirmations for ${txHash} (attempt ${attempt + 1}/${MAX_ATTEMPTS}) - confimations=${txReceipt?.confimations}`);
+      console.info(`Checking confirmations for ${txHash} (attempt ${attempt + 1}/${MAX_ATTEMPTS}) - confimations=${txReceipt?.confirmations}`);
 
       if (txReceipt?.confirmations >= Number(MAX_CONFIRMATION)) {
         return true;
