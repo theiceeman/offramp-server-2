@@ -152,3 +152,6 @@ Route.post('/process-web-hook', async (context: HttpContextContract) => {
     console.error({ error })
   }
 });
+
+
+Route.get('/rpc-status', 'RpcStatusController.checkStatus')

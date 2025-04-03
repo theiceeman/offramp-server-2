@@ -28,7 +28,7 @@ export default class OffRampWallet {
 
   constructor(network: supportedChains, cloneAddress: null | string = null) {
     this.network = network;
-    this.client = new Web3(getRpcUrl(this.network))
+    this.client = new Web3(getRpcUrl(network))
 
     this.factoryContract = new this.client.eth.Contract(
       factoryContractAbi, contractAddress[network].FACTORY_CONTRACT_ADDRESS.trim());

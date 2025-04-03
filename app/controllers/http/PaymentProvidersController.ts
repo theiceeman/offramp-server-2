@@ -1,9 +1,8 @@
 // import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 
 import { supportedChains, transactionProcessingType, userPaymentType } from "App/helpers/types";
-import { genRandomUuid, isTestNetwork } from "App/helpers/utils";
+import { genRandomUuid } from "App/helpers/utils";
 import OffRampWallet from "App/lib/contract-wallet/OffRampWallet";
-import Flutterwave from "App/lib/fiat-provider/Flutterwave";
 import Paystack from "App/lib/fiat-provider/Paystack";
 import Currency from "App/models/Currency";
 import Setting from "App/models/Setting";
