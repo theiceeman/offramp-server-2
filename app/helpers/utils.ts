@@ -106,8 +106,8 @@ export function getEthersProvider(network: supportedChains) {
 
 export const contractAddress = {
   bsc: {
-    FACTORY_CONTRACT_ADDRESS: '0x...',
-    WALLET_CONTRACT_ADDRESS: '0x...',
+    FACTORY_CONTRACT_ADDRESS: '0x5DbfE007D030ec3F88c672BF63a5cde87dF28B44',
+    WALLET_CONTRACT_ADDRESS: '0x81cf35e6dF3d526a92c07eA42A932EFB71F673Bc',
   },
   sepolia: {
     FACTORY_CONTRACT_ADDRESS: '0x028bA0F1A498AdCD86535053bd357899Bf9ADAb9',
