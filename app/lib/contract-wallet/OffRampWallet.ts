@@ -140,8 +140,8 @@ export default class OffRampWallet {
         from: OWNER_PUB_KEY,
         to: to.trim(),
         data: action.encodeABI(),
-        gas: 1500000,
-        // gas: Math.floor(await action.estimateGas({ from }) * 1.40),      //  gasLimit - measured in unit of gas
+        // gas: 1500000,
+        gas: Math.floor(await action.estimateGas({ OWNER_PUB_KEY }) * 1.40),      //  gasLimit - measured in unit of gas
         // gasPrice: 333000000000        //  measured in wei
       }
       if (!OWNER_PRV_KEY)
