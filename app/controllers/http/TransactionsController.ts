@@ -28,9 +28,9 @@ export default class TransactionsController extends RolesController {
         = await new TransactionsValidator().validateSellTransaction(request)
 
       // check for minimum & max amt for transactions
-      // let setting = await Setting.firstOrFail()
-      // if (amountInUsd < setting.minTransactionAmount || amountInUsd > setting.maxTransactionAmount)
-      //   throw new Error(`Transaction limit is between ${setting.minTransactionAmount.toLocaleString()} and ${setting.maxTransactionAmount.toLocaleString()} USD.`)
+      let setting = await Setting.firstOrFail()
+      if (amountInUsd < setting.minTransactionAmount || amountInUsd > setting.maxTransactionAmount)
+        throw new Error(`Transaction limit is between ${setting.minTransactionAmount.toLocaleString()} and ${setting.maxTransactionAmount.toLocaleString()} USD.`)
 
       /*
           if kyc setting is on, check if user has completed kyc.
@@ -87,9 +87,9 @@ export default class TransactionsController extends RolesController {
         = await new TransactionsValidator().validateRatesCalculation(request)
 
       // check for minimum & max amt for transactions
-      // let setting = await Setting.firstOrFail()
-      // if (amountInUsd < setting.minTransactionAmount || amountInUsd > setting.maxTransactionAmount)
-      //   throw new Error(`Transaction limit is between ${setting.minTransactionAmount.toLocaleString()} and ${setting.maxTransactionAmount.toLocaleString()} USD.`)
+      let setting = await Setting.firstOrFail()
+      if (amountInUsd < setting.minTransactionAmount || amountInUsd > setting.maxTransactionAmount)
+        throw new Error(`Transaction limit is between ${setting.minTransactionAmount.toLocaleString()} and ${setting.maxTransactionAmount.toLocaleString()} USD.`)
 
       let result = await new TransactionUtils()
         ._calculateRatesForUserSelling(senderCurrencyId, recieverCurrencyId, amountInUsd, transactionType.CRYPTO_OFFRAMP, amountType)
@@ -112,9 +112,9 @@ export default class TransactionsController extends RolesController {
         = await new TransactionsValidator().validateRatesCalculation(request)
 
 
-      // let setting = await Setting.firstOrFail()
-      // if (amountInUsd < setting.minTransactionAmount || amountInUsd > setting.maxTransactionAmount)
-      //   throw new Error(`Transaction limit is between ${setting.minTransactionAmount.toLocaleString()} and ${setting.maxTransactionAmount.toLocaleString()} USD.`)
+      let setting = await Setting.firstOrFail()
+      if (amountInUsd < setting.minTransactionAmount || amountInUsd > setting.maxTransactionAmount)
+        throw new Error(`Transaction limit is between ${setting.minTransactionAmount.toLocaleString()} and ${setting.maxTransactionAmount.toLocaleString()} USD.`)
 
       let result = await new TransactionUtils()
         ._calculateRatesForUserBuying(senderCurrencyId, recieverCurrencyId, amountInUsd, transactionType.BUY_CRYPTO, amountType)
@@ -137,12 +137,12 @@ export default class TransactionsController extends RolesController {
         = await new TransactionsValidator().validateBuyTransaction(request);
 
       // check for minimum & max amt for transactions
-      // let setting = await Setting.firstOrFail()
-      // if (amountInUsd < setting.minTransactionAmount || amountInUsd > setting.maxTransactionAmount)
-      //   throw new Error(`Transaction limit is between ${setting.minTransactionAmount.toLocaleString()} and ${setting.maxTransactionAmount.toLocaleString()} USD.`)
+      let setting = await Setting.firstOrFail()
+      if (amountInUsd < setting.minTransactionAmount || amountInUsd > setting.maxTransactionAmount)
+        throw new Error(`Transaction limit is between ${setting.minTransactionAmount.toLocaleString()} and ${setting.maxTransactionAmount.toLocaleString()} USD.`)
 
       await new FiatAccountController().checkIfUserHasBankAccount(uniqueId);
-      // await this.checkIfUserHasPendingTransaction(uniqueId, senderCurrencyId)
+      await this.checkIfUserHasPendingTransaction(uniqueId, senderCurrencyId)
 
       /*
           if kyc setting is on, check if user has completed kyc.
