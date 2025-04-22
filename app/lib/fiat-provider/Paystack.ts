@@ -188,9 +188,15 @@ export default class Paystack implements IPaymentProvider {
       let txn = await Transaction.query()
         .preload('recieverCurrency', (query) => query.select('name', 'network', 'tokenAddress'))
         .where('fiat_provider_tx_ref', payload?.data?.reference)
+      console.log({ txn })
+
+
+      if (txn.length > 1) {
+        throw new Error(`Multiple transactions found for fiat_provider_tx_ref: ${payload?.data?.reference}`);
+      }
 
       if (txn[0].status === transactionStatus.COMPLETED) {
-        throw new Error('txn already completed')
+        throw new Error('Transaction already completed')
       }
 
       if (txn[0].type === transactionType.BUY_CRYPTO) {
@@ -199,11 +205,11 @@ export default class Paystack implements IPaymentProvider {
         await this._processWebhookForSellTransaction(txn, payload);
       }
 
-      response.status(200).send('webhook processed.');
+      response.status(200).send('Webhook processed.');
 
     } catch (error) {
       console.log(error)
-      response.status(401).send('processing paystack webhook failed!');
+      response.status(401).send('Processing paystack webhook failed!');
     }
   }
 
@@ -260,7 +266,6 @@ export default class Paystack implements IPaymentProvider {
     try {
 
       let data = { status: '' }
-
       if (payload.event === "transfer.success") {
         data.status = transactionStatus.COMPLETED;
       } else {
@@ -268,6 +273,7 @@ export default class Paystack implements IPaymentProvider {
       }
 
       await Transaction.query()
+        .where("unique_id", txn[0].uniqueId)
         .where("fiat_provider_tx_ref", payload?.data?.reference)
         .update(data);
 
