@@ -53,7 +53,7 @@ export default class AuthUserController {
       const password = request.input('password')
 
       const token = await auth.use('user').attempt(email, password, {
-        expiresIn: 43200  // 12 hrs
+        expiresIn: '12 hrs'  // 12 hrs
       })
       response.status(200).json({ data: token })
     } catch {
