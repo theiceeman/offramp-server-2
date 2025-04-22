@@ -88,6 +88,16 @@ export default class SellCryptoIndexer {
     return new Promise((resolve, reject) => {
       const checkNewBlocks = async () => {
         try {
+          // Check transaction status before proceeding
+          const currentTxn = await Transaction.query()
+            .where('unique_id', this.transaction[0].uniqueId)
+            .first();
+          if (!currentTxn || [transactionStatus.COMPLETED, transactionStatus.FAILED].includes(currentTxn.status)) {
+            console.log(`Transaction ${this.transaction[0].uniqueId} is in terminal state: ${currentTxn?.status}. Stopping indexer.`);
+            resolve(null);
+            return;
+          }
+
           const currentBlock = await this.provider.getBlockNumber();
           console.log(`currentBlock`, currentBlock);
 
@@ -163,7 +173,7 @@ export default class SellCryptoIndexer {
 
 
       await new WebSocketsController()
-      .emitStatusUpdateToClient(txnUniqueId);
+        .emitStatusUpdateToClient(txnUniqueId);
 
       if (transactionConfirmed) {
         // Handle the additional steps for a successful sell transaction
