@@ -1,27 +1,9 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Route from '@ioc:Adonis/Core/Route'
-import { isTestNetwork } from 'App/helpers/utils';
-import Flutterwave from 'App/lib/fiat-provider/Flutterwave';
 import Paystack from 'App/lib/fiat-provider/Paystack';
-import Currency from 'App/models/Currency';
-import Transaction from 'App/models/Transaction';
 
 
-// Route.get('/', async () => {
-//   try {
-//     let flutterwave = new Flutterwave('prod');
-//     let params = {
-//       accountBank: 'some_bank',
-//       accountNumber: 'some_account_number',
-//       amount: 10,
-//       txRef: 'some_tx_ref'
-//     };
-//     let result = await flutterwave.initSendBankTransfer(params);
-//     console.log({ result })
-//   } catch (error) {
-//     console.error({ error })
-//   }
-// });
+
 
 Route.get('/app/global-configuration', 'AppConfigurationsController.admin').middleware('auth:admin')
 Route.get('/app/user/global-configuration', 'AppConfigurationsController.user')

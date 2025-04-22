@@ -26,7 +26,6 @@ export default class WebSocketsController {
     try {
       let connection = await SocketConnection
         .query().where('transaction_id', txnId)
-        console.log('connection',connection)
 
       if (connection.length < 1) return;
 
