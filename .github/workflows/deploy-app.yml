@@ -1,0 +1,40 @@
+name: Deploy App
+# when to run this workflow
+on:
+  push:
+    branches:
+      - main
+
+# what to do
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Move code from repo to container
+        uses: actions/checkout@v2
+      - name: Add nodejs & npm to container path
+        uses: actions/setup-node@v2
+        with:
+          node-version: '18'
+
+      - name: Install Yarn
+        run: npm install -g yarn
+
+      - name: Cache Yarn dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            **/node_modules
+            **/.yarn/cache
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build the app
+        run: yarn build
+
+      - name: Deploy
+        run: yarn deploy
