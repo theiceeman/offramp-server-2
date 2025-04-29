@@ -45,7 +45,7 @@ jobs:
           sudo git -c credential.helper='!f() { echo "username=${{ secrets.GIT_USERNAME }}"; echo "password=${{ secrets.GIT_TOKEN }}"; }; f' pull origin main
           sudo /root/.nvm/versions/node/v22.9.0/bin/yarn install --frozen-lockfile
           sudo /root/.nvm/versions/node/v22.9.0/bin/yarn build
-          cp .env ./build
           sudo /root/.nvm/versions/node/v22.9.0/bin/pm2 delete offramp-server-dev
+          sudo cp .env ./build
           sudo /root/.nvm/versions/node/v22.9.0/bin/pm2 start npm --name 'offramp-server-dev' -- run start:prod
 
