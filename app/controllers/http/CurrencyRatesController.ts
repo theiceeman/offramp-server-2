@@ -20,7 +20,7 @@ export default class CurrencyRatesController {
       if (data.hasOwnProperty(symbol))
         tokenDetails = data[symbol]
 
-      let usdRate = symbol === 'USDT' ? 1 : tokenDetails.quote.USD.price;
+      let usdRate = (symbol === 'USDT' || symbol === 'USDC') ? 1 : tokenDetails.quote.USD.price;
       return 1 / usdRate
     } catch (error) {
       throw new Error(error)

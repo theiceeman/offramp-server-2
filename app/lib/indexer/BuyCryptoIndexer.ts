@@ -21,6 +21,7 @@ export default class BuyCryptoIndexer {
   private startBlock: number;
   private endBlock: number;
   private blocksScanned: number = 0;
+  private tokenDecimals: number;
 
   constructor(txnId: any) {
     if (!MAX_CONFIRMATION || !MAX_ATTEMPTS) {
@@ -48,6 +49,7 @@ export default class BuyCryptoIndexer {
       this.provider = getEthersProvider(supportedChains[this.currency[0].network]);
       const wallet = new ethers.Wallet(Env.get('OWNER_PRV_KEY'), this.provider);
       this.tokenContract = new ethers.Contract(this.currency[0].tokenAddress, erc20Abi, wallet);
+      this.tokenDecimals = await this.tokenContract.decimals();
 
       // Set initial block range
       this.startBlock = await this.provider.getBlockNumber();
@@ -104,7 +106,7 @@ export default class BuyCryptoIndexer {
             const events = await this.tokenContract.queryFilter(filter, fromBlock, toBlock);
 
             for (const event of events) {
-              const decimalValue = parseInt(event.args[2].toString()) / 10 ** 18;
+              const decimalValue = parseInt(event.args[2].toString()) / 10 ** this.tokenDecimals;
               if (decimalValue >= expectedAmount) {
                 console.log(`Found matching transfer in block ${event.blockNumber}`);
                 resolve(event);
