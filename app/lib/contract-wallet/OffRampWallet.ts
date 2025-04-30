@@ -10,6 +10,7 @@ dotenv.config()
 
 const factoryContractAbi = abiManager.factoryContractAbi.abi as unknown as AbiItem
 const walletContractAbi = abiManager.walletContractAbi.abi as unknown as AbiItem
+const erc20Abi = abiManager.erc20Abi.abi as unknown as AbiItem;
 
 const OWNER_PRV_KEY = process.env.OWNER_PRV_KEY
 const OWNER_PUB_KEY = process.env.OWNER_PUB_KEY
@@ -48,7 +49,14 @@ export default class OffRampWallet {
    */
   public async cloneWalletTokenBalance(tokenAddress) {
     const balance = await this.cloneWalletContract.methods.getBalance(tokenAddress).call();
-    return this.client.utils.fromWei(balance);
+
+    const contract = new this.client.eth.Contract(
+      erc20Abi,
+      tokenAddress.trim()
+    );
+    const decimals = await contract.methods.decimals().call();
+    // Dynamically use decimals to format the balance
+    return balance / 10** decimals;
   }
 
 

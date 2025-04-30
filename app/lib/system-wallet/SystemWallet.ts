@@ -108,7 +108,9 @@ export default class SystemWallet {
     const balance = await contract.methods
       .balanceOf(this._systemWalletAddress)
       .call();
-    return this.client.utils.fromWei(balance);
+
+    const decimals = await contract.methods.decimals().call();
+    return balance / (10 ** decimals);
   }
 
   /**
@@ -136,15 +138,14 @@ export default class SystemWallet {
     let action = await contract.methods.flushMultipleTokens(
       tokenContractAddresses
     );
+    const from = process.env.OWNER_PUB_KEY;
 
     let tx = {
-      // nonce,
-      from: process.env.OWNER_PUB_KEY,
+      from,
       to: walletAddress.trim(),
       data: action.encodeABI(),
-      gas: 1500000,
-      // gas: Math.floor(await action.estimateGas({ from }) * 1.40),      //  gasLimit - measured in unit of gas
-      // gasPrice: 333000000000        //  measured in wei
+      gas: Math.floor(await action.estimateGas({ from }) * 1.40),      //  gasLimit - measured in unit of gas
+      gasPrice: await this.client.eth.getGasPrice(), // Dynamically fetch the gas price
     };
 
     const createTransaction = await this.client.eth.accounts.signTransaction(
@@ -165,22 +166,20 @@ export default class SystemWallet {
    */
   public async transferToken(amount, tokenAddress, to) {
     console.log('transferring...');
-    // return;
     const contract = new this.client.eth.Contract(
       erc20Abi,
       tokenAddress.trim()
     );
+    const decimals = await contract.methods.decimals().call();
     let _amount = BigNumber.from(
-      (amount * 10 ** 18).toLocaleString("fullwide", { useGrouping: false })
+      (amount * 10 ** decimals).toLocaleString("fullwide", { useGrouping: false })
     );
     let action = await contract.methods.transfer(to, _amount);
 
-    // console.log({ estimateGas: await action.estimateGas({ from }) });
     let tx = {
       from: process.env.OWNER_PUB_KEY,
       to: tokenAddress.trim(),
       data: action.encodeABI(),
-      // gas: 1500000,
       gas: await action.estimateGas({ from: process.env.OWNER_PUB_KEY }),
       gasPrice: await this.client.eth.getGasPrice(), // Dynamically fetch the gas price
     };
