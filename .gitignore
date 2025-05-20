@@ -20,3 +20,5 @@ logs
 .yarn-integrity
 .env.production
 .env.live
+.env.dev
+.secrets
