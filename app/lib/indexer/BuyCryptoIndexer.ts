@@ -9,6 +9,8 @@ import WebSocketsController from "App/controllers/http/WebSocketsController";
 import TransactionsController from "App/controllers/http/TransactionsController";
 
 const erc20Abi = abiManager.erc20Abi.abi;
+const MAX_CONFIRMATION = process.env.MAX_CONFIRMATION;
+const MAX_ATTEMPTS = process.env.MAX_ATTEMPTS;
 
 export default class BuyCryptoIndexer {
   private provider;
@@ -19,8 +21,14 @@ export default class BuyCryptoIndexer {
   private startBlock: number;
   private endBlock: number;
   private blocksScanned: number = 0;
+  private tokenDecimals: number;
 
   constructor(txnId: any) {
+    if (!MAX_CONFIRMATION || !MAX_ATTEMPTS) {
+      console.error('MAX_CONFIRMATION or MAX_ATTEMPTS is not set in the environment variables.');
+      throw new Error('MAX_CONFIRMATION or MAX_ATTEMPTS is not set in the environment variables.');
+    }
+
     this.txnUniqueId = txnId;
   }
 
@@ -41,9 +49,10 @@ export default class BuyCryptoIndexer {
       this.provider = getEthersProvider(supportedChains[this.currency[0].network]);
       const wallet = new ethers.Wallet(Env.get('OWNER_PRV_KEY'), this.provider);
       this.tokenContract = new ethers.Contract(this.currency[0].tokenAddress, erc20Abi, wallet);
+      this.tokenDecimals = await this.tokenContract.decimals();
 
       // Set initial block range
-      this.startBlock = await this.provider.getBlockNumber() - 10;
+      this.startBlock = await this.provider.getBlockNumber();
       this.endBlock = this.startBlock + 1200; // Look ahead ~1 hour
 
       const matchingTransfer = await this.monitorFutureBlocks() as Transaction;
@@ -97,7 +106,7 @@ export default class BuyCryptoIndexer {
             const events = await this.tokenContract.queryFilter(filter, fromBlock, toBlock);
 
             for (const event of events) {
-              const decimalValue = parseInt(event.args[2].toString()) / 10 ** 18;
+              const decimalValue = parseInt(event.args[2].toString()) / 10 ** this.tokenDecimals;
               if (decimalValue >= expectedAmount) {
                 console.log(`Found matching transfer in block ${event.blockNumber}`);
                 resolve(event);
@@ -122,14 +131,15 @@ export default class BuyCryptoIndexer {
   }
 
   private waitForConfirmations = async (txHash: string): Promise<boolean> => {
-    const maxAttempts = 15;
+    // const maxAttempts = 20;
     const pollInterval = 10000; // 10 secs
 
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      console.info(`Checking confirmations for ${txHash} (attempt ${attempt + 1}/${maxAttempts})`);
-
+    for (let attempt = 0; attempt < Number(MAX_ATTEMPTS); attempt++) {
       const txReceipt = await this.provider.getTransaction(txHash);
-      if (txReceipt?.confirmations >= 15) {
+
+      console.info(`Checking confirmations for ${txHash} (attempt ${attempt + 1}/${MAX_ATTEMPTS}) - confimations=${txReceipt?.confirmations}`);
+
+      if (txReceipt?.confirmations >= Number(MAX_CONFIRMATION)) {
         return true;
       }
 
@@ -146,7 +156,7 @@ export default class BuyCryptoIndexer {
         status: transactionConfirmed ? transactionStatus.COMPLETED : transactionStatus.FAILED
       };
 
-       await Transaction.query()
+      await Transaction.query()
         .where("unique_id", txnUniqueId)
         .update(data);
       // console.log('handling...', txnUniqueId, vv); return;

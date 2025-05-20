@@ -1,9 +1,10 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import { schema } from '@ioc:Adonis/Core/Validator'
-import Monnify from 'App/lib/fiat-provider/Monnify';
 import UserFiatAccount from 'App/models/UserFiatAccount';
 import RolesController from './RolesController';
 import { formatErrorMessage } from 'App/helpers/utils';
+import Bank from 'App/models/Bank';
+import { createTransferRecipient } from 'App/lib/fiat-provider/utils/paystack.utils';
 
 
 export default class FiatAccountController extends RolesController {
@@ -12,7 +13,7 @@ export default class FiatAccountController extends RolesController {
     const transactionSchema = schema.create({
       accountName: schema.string({ trim: true }),
       accountNo: schema.string({ trim: true }),
-      bankName: schema.string({ trim: true }),
+      bankId: schema.string({ trim: true }),
     })
     const messages = {
       required: 'The {{ field }} is required.'
@@ -26,6 +27,18 @@ export default class FiatAccountController extends RolesController {
       await this.validate(request)
 
       let uniqueId = await this.allowOnlyLoggedInUsers(auth)
+
+      let bankExists = await Bank.query().where('unique_id', data.bankId)
+      if (bankExists.length < 1) {
+        throw new Error('Bank Id does not exist')
+      }
+
+      // ensure its valid account details
+      const recipient = await createTransferRecipient(bankExists[0].paystackCode, data.accountNo, uniqueId)
+      if (!recipient.recipientCode) {
+        throw new Error('Invalid bank account')
+      }
+
       let accountExists = await UserFiatAccount.query()
         .where('user_id', uniqueId)
 
@@ -36,7 +49,7 @@ export default class FiatAccountController extends RolesController {
           .update({
             accountName: data.accountName,
             accountNo: data.accountNo,
-            bankName: data.bankName,
+            bankId: data.bankId,
           })
 
       } else {
@@ -44,7 +57,7 @@ export default class FiatAccountController extends RolesController {
           userId: auth.use('user').user?.uniqueId,
           accountName: data.accountName,
           accountNo: data.accountNo,
-          bankName: data.bankName,
+          bankId: data.bankId,
         });
       }
 
@@ -65,6 +78,7 @@ export default class FiatAccountController extends RolesController {
       let uniqueId = await this.allowOnlyLoggedInUsers(auth)
 
       let data = await UserFiatAccount.query()
+        .preload('bank', (query) => query.select('bankName', 'unique_id', 'paystackCode'))
         .where('user_id', uniqueId)
         .where('is_deleted', false)
 
@@ -80,6 +94,7 @@ export default class FiatAccountController extends RolesController {
       this.allowOnlySuperAdmins(auth);
 
       let data = await UserFiatAccount.query()
+        .preload('bank', (query) => query.select('bankName', 'unique_id', 'paystackCode'))
         .where('user_id', params.userId)
 
       response.status(200).json({ data });
@@ -114,7 +129,7 @@ export default class FiatAccountController extends RolesController {
       if (!uniqueId)
         throw new Error('Authentication error!')
 
-      let result = await new Monnify('dev').getSupportedBanks();
+      let result = await Bank.query()
 
       if (result !== null) {
         response.status(200).json({ data: result });

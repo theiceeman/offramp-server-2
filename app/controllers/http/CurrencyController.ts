@@ -126,14 +126,18 @@ export default class CurrencyController {
       if (user.type !== 'SUPER_ADMIN')
         throw new Error('Not authorized!')
 
+      let currency = await Currency.query()
+        .where('unique_id', params.currencyId)
+        .firstOrFail()
+
       let result = await Currency.query()
         .where('unique_id', params.currencyId)
-        .update({ is_deleted: true })
+        .update({ is_deleted: !currency.isDeleted })
 
       if (result === null) {
         throw new Error("Action failed!");
       } else {
-        response.status(200).json(await formatSuccessMessage("Currency deleted.",null));
+        response.status(200).json(await formatSuccessMessage(`Currency ${currency.isDeleted ? 'restored' : 'deleted'}.`, null));
       }
     } catch (error) {
       response.status(400).json(await formatErrorMessage(error))
@@ -159,6 +163,18 @@ export default class CurrencyController {
       response.status(200).json({ data });
     } catch (error) {
       response.status(400).json({ data: error.message });
+    }
+  }
+
+
+  public async updateNgnUsdRate() {
+    try {
+      let marketUsdRate = await new CurrencyRatesController().getFiatUsdRate('NGN');
+      await Currency.query().where('symbol', 'NGN').update({ marketUsdRate })
+
+      console.info({ data: "NGN rate updated!" })
+    } catch (error) {
+      console.error(await formatErrorMessage(error))
     }
   }
 

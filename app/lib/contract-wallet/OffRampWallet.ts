@@ -10,6 +10,7 @@ dotenv.config()
 
 const factoryContractAbi = abiManager.factoryContractAbi.abi as unknown as AbiItem
 const walletContractAbi = abiManager.walletContractAbi.abi as unknown as AbiItem
+const erc20Abi = abiManager.erc20Abi.abi as unknown as AbiItem;
 
 const OWNER_PRV_KEY = process.env.OWNER_PRV_KEY
 const OWNER_PUB_KEY = process.env.OWNER_PUB_KEY
@@ -28,7 +29,7 @@ export default class OffRampWallet {
 
   constructor(network: supportedChains, cloneAddress: null | string = null) {
     this.network = network;
-    this.client = new Web3(getRpcUrl(this.network))
+    this.client = new Web3(getRpcUrl(network))
 
     this.factoryContract = new this.client.eth.Contract(
       factoryContractAbi, contractAddress[network].FACTORY_CONTRACT_ADDRESS.trim());
@@ -48,7 +49,14 @@ export default class OffRampWallet {
    */
   public async cloneWalletTokenBalance(tokenAddress) {
     const balance = await this.cloneWalletContract.methods.getBalance(tokenAddress).call();
-    return this.client.utils.fromWei(balance);
+
+    const contract = new this.client.eth.Contract(
+      erc20Abi,
+      tokenAddress.trim()
+    );
+    const decimals = await contract.methods.decimals().call();
+    // Dynamically use decimals to format the balance
+    return balance / 10** decimals;
   }
 
 
@@ -140,8 +148,8 @@ export default class OffRampWallet {
         from: OWNER_PUB_KEY,
         to: to.trim(),
         data: action.encodeABI(),
-        gas: 1500000,
-        // gas: Math.floor(await action.estimateGas({ from }) * 1.40),      //  gasLimit - measured in unit of gas
+        // gas: 1500000,
+        gas: Math.floor(await action.estimateGas({ OWNER_PUB_KEY }) * 1.40),      //  gasLimit - measured in unit of gas
         // gasPrice: 333000000000        //  measured in wei
       }
       if (!OWNER_PRV_KEY)

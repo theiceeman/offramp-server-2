@@ -2,7 +2,7 @@ import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import { schema } from '@ioc:Adonis/Core/Validator'
 import Currency from 'App/models/Currency';
 import Transaction from 'App/models/Transaction';
-import { formatErrorMessage, formatSuccessMessage } from 'App/helpers/utils';
+import { formatErrorMessage, formatSuccessMessage, genRandomUuid } from 'App/helpers/utils';
 import SellCryptoIndexer from 'App/lib/indexer/SellCryptoIndexer';
 import { transactionStatus, transactionType } from 'App/helpers/types';
 import { DateTime } from 'luxon';
@@ -55,7 +55,8 @@ export default class TransactionsController extends RolesController {
         sendingCurrencyUsdRate: transaction[0].sendingCurrencyUsdRate,
         recievingCurrencyUsdRate: transaction[0].recievingCurrencyUsdRate,
         fee: transaction[0].fee,   // fee in USD
-        walletAddress: txnWalletAddress
+        walletAddress: txnWalletAddress,
+        fiatProviderTxRef: genRandomUuid()
       });
 
       if (result !== null) {
@@ -86,9 +87,9 @@ export default class TransactionsController extends RolesController {
         = await new TransactionsValidator().validateRatesCalculation(request)
 
       // check for minimum & max amt for transactions
-      // let setting = await Setting.firstOrFail()
-      // if (amountInUsd < setting.minTransactionAmount || amountInUsd > setting.maxTransactionAmount)
-      //   throw new Error(`Transaction limit is between ${setting.minTransactionAmount.toLocaleString()} and ${setting.maxTransactionAmount.toLocaleString()} USD.`)
+      let setting = await Setting.firstOrFail()
+      if (amountInUsd < setting.minTransactionAmount || amountInUsd > setting.maxTransactionAmount)
+        throw new Error(`Transaction limit is between ${setting.minTransactionAmount.toLocaleString()} and ${setting.maxTransactionAmount.toLocaleString()} USD.`)
 
       let result = await new TransactionUtils()
         ._calculateRatesForUserSelling(senderCurrencyId, recieverCurrencyId, amountInUsd, transactionType.CRYPTO_OFFRAMP, amountType)
@@ -111,9 +112,9 @@ export default class TransactionsController extends RolesController {
         = await new TransactionsValidator().validateRatesCalculation(request)
 
 
-      // let setting = await Setting.firstOrFail()
-      // if (amountInUsd < setting.minTransactionAmount || amountInUsd > setting.maxTransactionAmount)
-      //   throw new Error(`Transaction limit is between ${setting.minTransactionAmount.toLocaleString()} and ${setting.maxTransactionAmount.toLocaleString()} USD.`)
+      let setting = await Setting.firstOrFail()
+      if (amountInUsd < setting.minTransactionAmount || amountInUsd > setting.maxTransactionAmount)
+        throw new Error(`Transaction limit is between ${setting.minTransactionAmount.toLocaleString()} and ${setting.maxTransactionAmount.toLocaleString()} USD.`)
 
       let result = await new TransactionUtils()
         ._calculateRatesForUserBuying(senderCurrencyId, recieverCurrencyId, amountInUsd, transactionType.BUY_CRYPTO, amountType)
@@ -136,9 +137,9 @@ export default class TransactionsController extends RolesController {
         = await new TransactionsValidator().validateBuyTransaction(request);
 
       // check for minimum & max amt for transactions
-      // let setting = await Setting.firstOrFail()
-      // if (amountInUsd < setting.minTransactionAmount || amountInUsd > setting.maxTransactionAmount)
-      //   throw new Error(`Transaction limit is between ${setting.minTransactionAmount.toLocaleString()} and ${setting.maxTransactionAmount.toLocaleString()} USD.`)
+      let setting = await Setting.firstOrFail()
+      if (amountInUsd < setting.minTransactionAmount || amountInUsd > setting.maxTransactionAmount)
+        throw new Error(`Transaction limit is between ${setting.minTransactionAmount.toLocaleString()} and ${setting.maxTransactionAmount.toLocaleString()} USD.`)
 
       await new FiatAccountController().checkIfUserHasBankAccount(uniqueId);
       await this.checkIfUserHasPendingTransaction(uniqueId, senderCurrencyId)

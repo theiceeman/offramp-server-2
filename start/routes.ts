@@ -1,26 +1,9 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Route from '@ioc:Adonis/Core/Route'
-import { isTestNetwork } from 'App/helpers/utils';
-import Flutterwave from 'App/lib/fiat-provider/Flutterwave';
-import Currency from 'App/models/Currency';
-import Transaction from 'App/models/Transaction';
+import Paystack from 'App/lib/fiat-provider/Paystack';
 
 
-Route.get('/', async () => {
-  try {
-    let flutterwave = new Flutterwave('prod');
-    let params = {
-      accountBank: 'some_bank',
-      accountNumber: 'some_account_number',
-      amount: 10,
-      txRef: 'some_tx_ref'
-    };
-    let result = await flutterwave.initSendBankTransfer(params);
-    console.log({result})
-  } catch (error) {
-    console.error({ error })
-  }
-});
+
 
 Route.get('/app/global-configuration', 'AppConfigurationsController.admin').middleware('auth:admin')
 Route.get('/app/user/global-configuration', 'AppConfigurationsController.user')
@@ -139,20 +122,18 @@ Route.group(() => {
 }).prefix('/admin/ticket').middleware('auth:admin')
 
 
-Route.post('transaction/flutterwave/process-web-hook', async (context: HttpContextContract) => {
+Route.post('/process-web-hook', async (context: HttpContextContract) => {
   try {
     const payload = context.request.body();
-    console.log('fwv payload', payload)
-    let txn = await Transaction.query().where('fiat_provider_tx_ref', payload?.data?.tx_ref)
+    console.log('fwv payload', payload);
 
-    const recievingCurrency = await Currency.query().where('unique_id', txn[0].recieverCurrencyId)
+    context.response.status(200).send("webhook received");
+    new Paystack().processWebhook(context)
 
-    let isTestTransaction = isTestNetwork(recievingCurrency[0].network)
-    const message = await new Flutterwave(isTestTransaction ? 'dev' : 'prod')
-      .processWebhook(context);
-
-    context.response.send(message);
   } catch (error) {
     console.error({ error })
   }
 });
+
+
+Route.get('/rpc-status', 'RpcStatusController.checkStatus')

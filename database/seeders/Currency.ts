@@ -4,6 +4,9 @@ import Currency from 'App/models/Currency'
 
 export default class extends BaseSeeder {
   public async run() {
+    let currency = await Currency.query()
+    if (currency.length > 0) return;
+
     await Currency.create(
       {
         "type": "fiat",

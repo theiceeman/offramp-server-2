@@ -60,7 +60,7 @@ export function formatSuccessMessage(message: string, result: any) {
 }
 
 export function getRpcUrl(network: supportedChains) {
-  let url
+  let url;
   switch (network) {
     case 'bsc':
       url = Env.get('BSC_RPC');
@@ -74,16 +74,20 @@ export function getRpcUrl(network: supportedChains) {
     case 'local':
       url = 'http://127.0.0.1:8545/';
       break;
+    case 'base':
+      url = Env.get('BASE_RPC');
+      break;
+    case 'base_sepolia':
+      url = Env.get('BASE_SEPOLIA_RPC');
+      break;
     default:
       break;
   }
   return url;
-
 }
 
-
 export function getEthersProvider(network: supportedChains) {
-  let client
+  let client;
   switch (network) {
     case 'bsc':
       client = new ethers.providers.JsonRpcProvider(Env.get('BSC_RPC'));
@@ -97,6 +101,12 @@ export function getEthersProvider(network: supportedChains) {
     case 'local':
       client = new ethers.providers.JsonRpcProvider('http://127.0.0.1:8545/');
       break;
+    case 'base':
+      client = new ethers.providers.JsonRpcProvider(Env.get('BASE_RPC'));
+      break;
+    case 'base_sepolia':
+      client = new ethers.providers.JsonRpcProvider(Env.get('BASE_SEPOLIA_RPC'));
+      break;
     default:
       break;
   }
@@ -106,8 +116,8 @@ export function getEthersProvider(network: supportedChains) {
 
 export const contractAddress = {
   bsc: {
-    FACTORY_CONTRACT_ADDRESS: '0x...',
-    WALLET_CONTRACT_ADDRESS: '0x...',
+    FACTORY_CONTRACT_ADDRESS: '0xb017E4E9AFA12AcFE94366E50025AE31E0C2E5C6',
+    WALLET_CONTRACT_ADDRESS: '0xe7b02877ffccB798e4f3a427d1920437FA9E9E28',
   },
   sepolia: {
     FACTORY_CONTRACT_ADDRESS: '0x028bA0F1A498AdCD86535053bd357899Bf9ADAb9',
@@ -116,6 +126,14 @@ export const contractAddress = {
   assetchain_testnet: {
     FACTORY_CONTRACT_ADDRESS: '0x381AFE71090cf71B75a886EA8833dfc9683c57b6',
     WALLET_CONTRACT_ADDRESS: '0x43d77792b5992fE8c3e1F863e276c7826A806c9C',
+  },
+  base: {
+    FACTORY_CONTRACT_ADDRESS: '',
+    WALLET_CONTRACT_ADDRESS: '',
+  },
+  base_sepolia: {
+    FACTORY_CONTRACT_ADDRESS: '0x5784fff973B28b151Be14D57B58Ff47c510Ad795',
+    WALLET_CONTRACT_ADDRESS: '0x728185cD95F9f540431ad5A65C2886b91e85D583',
   }
 }
 

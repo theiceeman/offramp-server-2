@@ -1,5 +1,7 @@
 
 export enum supportedChains {
+  base_sepolia = 'base_sepolia',
+  base = 'base',
   bsc = 'bsc',
   sepolia = 'sepolia',
   assetchain_testnet = 'assetchain_testnet',
@@ -11,15 +13,18 @@ export enum currencyNetwork {
   bsc = 'bsc',
   sepolia = 'sepolia',
   assetchain_testnet = 'assetchain_testnet',
-  local = 'local'
+  local = 'local',
+  base = 'base',
+  base_sepolia = 'base_sepolia',
 }
 
 export const NETWORKS = {
   TEST: [
     supportedChains.sepolia,
-    supportedChains.assetchain_testnet
+    supportedChains.assetchain_testnet,
+    supportedChains.base_sepolia
   ],
-  MAIN: [supportedChains.bsc]
+  MAIN: [supportedChains.bsc, supportedChains.base]
 };
 
 export enum transactionStatus {

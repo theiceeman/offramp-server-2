@@ -39,7 +39,7 @@ export default class extends BaseSchema {
                 lp_profit_percentage: 70,
                 transaction_processing_type: transactionProcessingType.MANUAL,
                 default_account_bank: 'Moniepoint Bank',
-                default_account_no: '4293826673',
+                default_account_no: '6705555688',
                 default_account_name: 'Imperionix Tech Ltd.',
                 min_transaction_amount: 1,
                 max_transaction_amount: 10000,
