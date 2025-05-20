@@ -1,4 +1,9 @@
 
+export enum TokenStandard {
+  ERC20 = 'ERC20',
+  BEP20 = 'BEP20'
+}
+
 export enum supportedChains {
   base_sepolia = 'base_sepolia',
   base = 'base',
@@ -17,6 +22,20 @@ export enum currencyNetwork {
   base = 'base',
   base_sepolia = 'base_sepolia',
 }
+
+
+export interface iChainTokenStandard {
+  [chain: string]: TokenStandard;
+}
+
+export const ChainTokenStandard: iChainTokenStandard = {
+  [supportedChains.base_sepolia]: TokenStandard.ERC20,
+  [supportedChains.base]: TokenStandard.ERC20,
+  [supportedChains.sepolia]: TokenStandard.ERC20,
+  [supportedChains.bsc]: TokenStandard.BEP20,
+  [supportedChains.assetchain_testnet]: TokenStandard.ERC20,
+  [supportedChains.local]: TokenStandard.ERC20
+};
 
 export const NETWORKS = {
   TEST: [

@@ -1,5 +1,5 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
-import { currencyNetwork, supportedChains, transactionProcessingType, transactionStatus } from 'App/helpers/types'
+import { ChainTokenStandard, currencyNetwork, supportedChains, transactionProcessingType, transactionStatus } from 'App/helpers/types'
 import { roundToTwoDecimalPlace } from 'App/helpers/utils';
 import Currency from 'App/models/Currency'
 import Setting from 'App/models/Setting'
@@ -39,6 +39,7 @@ export default class AppConfigurationsController {
       USD_NGN_MARKET_RATE: Number(ngn[0].marketUsdRate),
       USD_NGN_BUY_RATE: roundToTwoDecimalPlace(Number(ngn[0].marketUsdRate) - buyRatePercentage),
       USD_NGN_SELL_RATE: roundToTwoDecimalPlace(Number(ngn[0].marketUsdRate) + sellRatePercentage),
+      TOKEN_STANDARD: ChainTokenStandard
     }
 
     response.status(200).json(data)
@@ -60,6 +61,7 @@ export default class AppConfigurationsController {
       USD_NGN_MARKET_RATE: Number(ngn[0].marketUsdRate),
       USD_NGN_BUY_RATE: roundToTwoDecimalPlace(Number(ngn[0].marketUsdRate) - buyRatePercentage),
       USD_NGN_SELL_RATE: roundToTwoDecimalPlace(Number(ngn[0].marketUsdRate) + sellRatePercentage),
+      TOKEN_STANDARD: ChainTokenStandard
     }
 
     response.status(200).json(data)
