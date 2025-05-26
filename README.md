@@ -35,7 +35,14 @@ Add the DB credentials to .env.
 - Exchange API keys (e.g. Binance)
 - Payment provider keys (e.g. Paystack, Monnify)
 - Socket & webhook URLs
-
+```bash
+### Run migration
+node ace migration:fresh
+```
+```bash
+### Run the seeder
+node ace db:seed
+```
 ```bash
 ### Run the development server
 yarn dev
