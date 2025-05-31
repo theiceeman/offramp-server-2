@@ -31,6 +31,8 @@ export default class SystemWallet {
 
   constructor(network: supportedChains) {
     this.network = network;
+    console.log('network', network)
+    console.log('getRpcUrl(network)', getRpcUrl(network))
     this.client = new Web3(getRpcUrl(network));
   }
 

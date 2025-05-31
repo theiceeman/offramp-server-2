@@ -61,6 +61,26 @@ export function formatSuccessMessage(message: string, result: any) {
 
 export function getRpcUrl(network: supportedChains) {
   let url;
+  if (!Env.get('BSC_RPC')) {
+    console.error('BSC_RPC environment variable is not set.');
+    return;
+  }
+  if (!Env.get('SEPOLIA_RPC')) {
+    console.error('SEPOLIA_RPC environment variable is not set.');
+    return;
+  }
+  if (!Env.get('ASSETCHAIN_TESTNET_RPC')) {
+    console.error('ASSETCHAIN_TESTNET_RPC environment variable is not set.');
+    return;
+  }
+  if (!Env.get('BASE_RPC')) {
+    console.error('BASE_RPC environment variable is not set.');
+    return;
+  }
+  if (!Env.get('BASE_SEPOLIA_RPC')) {
+    console.error('BASE_SEPOLIA_RPC environment variable is not set.');
+    return;
+  }
   switch (network) {
     case 'bsc':
       url = Env.get('BSC_RPC');
