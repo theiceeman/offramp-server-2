@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  test_db:
+    image: postgres:15  # We're using PostgreSQL version 15
+    container_name: adonis_test_db
+    environment:
+      POSTGRES_USER: test_user        # Username inside the DB
+      POSTGRES_PASSWORD: test_pass    # Password
+      POSTGRES_DB: test_db            # DB name
+    ports:
+      - "5433:5432"  # Maps container port 5432 to your machine's port 5433
+    networks:
+      - test_net     # Isolated test network
+
+networks:
+  test_net:
