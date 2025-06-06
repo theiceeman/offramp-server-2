@@ -64,7 +64,6 @@ export default class Paystack implements IPaymentProvider {
         },
         reference: txRef
       }
-      // console.log('this.baseUrl',this.baseUrl)
 
       const response = await Request.post(`${this.baseUrl}/charge`, payload, { headers });
       if (!response.ok) {
@@ -166,6 +165,7 @@ export default class Paystack implements IPaymentProvider {
    */
   public async processWebhook({ request, response }: HttpContextContract) {
     try {
+      console.log('request', request)
       const payload = request.body();
       const headers = request.headers();
 
