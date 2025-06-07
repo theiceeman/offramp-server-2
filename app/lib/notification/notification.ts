@@ -73,7 +73,7 @@ export class NotificationService {
 
       const html = await this.getHtml(template, replacements);
 
-      const message = await transporter.sendMail({
+      await transporter.sendMail({
         from,
         to,
         subject,
