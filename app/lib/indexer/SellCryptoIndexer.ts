@@ -86,6 +86,7 @@ export default class SellCryptoIndexer {
     }
 
     const expectedCurrencyAmount = this.transaction[0].amountInUsd * this.transaction[0].sendingCurrencyUsdRate;
+    const FINALITY_DELAY = 5;
 
     return new Promise((resolve, reject) => {
       const checkNewBlocks = async () => {
@@ -109,8 +110,11 @@ export default class SellCryptoIndexer {
             return;
           }
 
+          // Only query blocks that are finalized (currentBlock - FINALITY_DELAY)
+          const finalizedBlock = currentBlock - FINALITY_DELAY;
+
           // Only query new blocks we haven't seen yet
-          if (currentBlock > this.startBlock + this.blocksScanned) {
+          if (finalizedBlock > this.startBlock + this.blocksScanned) {
             const fromBlock = this.startBlock + this.blocksScanned;
             const toBlock = currentBlock;
 
