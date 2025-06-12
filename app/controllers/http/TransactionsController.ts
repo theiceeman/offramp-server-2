@@ -14,8 +14,18 @@ import PaymentProvidersController from './PaymentProvidersController';
 import AppOverviewsController from './AppOverviewsController';
 import WebSocketsController from './WebSocketsController';
 import Setting from 'App/models/Setting';
+import { NotificationService } from 'App/lib/notification/notification';
 
 export default class TransactionsController extends RolesController {
+  protected notificationService: NotificationService
+
+  constructor() {
+    super()
+    if (!process.env.JWT_KEY) {
+      throw new Error("JWT_KEY environment variable is not set.");
+    }
+    this.notificationService = new NotificationService()
+  }
 
 
   public async createOfframpCrypto({ request, response, auth }: HttpContextContract) {
@@ -61,6 +71,13 @@ export default class TransactionsController extends RolesController {
 
       if (result !== null) {
         new SellCryptoIndexer(result.uniqueId).__initializer()
+
+        await this.notificationService.sendEmail({
+          to: 'okorieebube1@gmail.com',
+          subject: 'Western Treasury Transaction',
+          template: "password_reset",
+          replacements: { code: 123 },
+        });
 
         /**
          * send email of transaction created.

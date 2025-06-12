@@ -22,3 +22,5 @@ logs
 .env.live
 .env.dev
 .secrets
+.env.local
+.env.test
